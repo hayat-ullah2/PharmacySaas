@@ -1,0 +1,20 @@
+# Dependencies & build output
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+**/.turbo/
+
+# Secrets / environment
+**/.env
+**/.env.*
+
+# Logs
+**/*.log
+**/npm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+**/*.tsbuildinfo
+**/.vercel/
