@@ -155,9 +155,7 @@ export default function CategoriesPage() {
                         label: "Delete",
                         icon: <Trash2 className="h-4 w-4" />,
                         danger: true,
-                        onClick: () => c.medicineCount > 0
-                          ? toast({ type: "warning", title: "Category is in use", description: "Reassign its medicines before deleting it." })
-                          : setDeleteTarget(c),
+                        onClick: () => setDeleteTarget(c),
                       },
                     ]}
                   />
@@ -171,13 +169,7 @@ export default function CategoriesPage() {
                   <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
                     <Pencil className="h-4 w-4" /> Edit
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => c.medicineCount > 0
-                      ? toast({ type: "warning", title: "Category is in use", description: "Reassign its medicines before deleting it." })
-                      : setDeleteTarget(c)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(c)}>
                     <Trash2 className="h-4 w-4" /> Delete
                   </Button>
                 </div>

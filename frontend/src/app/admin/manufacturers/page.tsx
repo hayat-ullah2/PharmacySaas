@@ -13,7 +13,7 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { BRANDS, MANUFACTURERS } from "@/lib/data";
+import { MANUFACTURERS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { paginate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
@@ -145,9 +145,7 @@ export default function ManufacturersPage() {
               label: "Delete",
               icon: <Trash2 className="h-4 w-4" />,
               danger: true,
-              onClick: () => m.productCount > 0 || BRANDS.some((brand) => brand.manufacturer === m.name)
-                ? toast({ type: "warning", title: "Manufacturer is in use", description: "Reassign its products and brands before deleting it." })
-                : setDeleteTarget(m),
+              onClick: () => setDeleteTarget(m),
             },
           ]}
         />
@@ -228,7 +226,6 @@ export default function ManufacturersPage() {
           <Input
             label="Manufacturer name"
             placeholder="e.g. GSK Pharmaceuticals"
-            disabled={!!editTarget && (editTarget.productCount > 0 || BRANDS.some((brand) => brand.manufacturer === editTarget.name))}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />

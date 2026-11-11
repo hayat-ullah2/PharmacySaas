@@ -131,9 +131,7 @@ export default function BrandsPage() {
               label: "Delete",
               icon: <Trash2 className="h-4 w-4" />,
               danger: true,
-              onClick: () => b.medicineCount > 0
-                ? toast({ type: "warning", title: "Brand is in use", description: "Reassign its medicines before deleting it." })
-                : setDeleteTarget(b),
+              onClick: () => setDeleteTarget(b),
             },
           ]}
         />
@@ -214,13 +212,11 @@ export default function BrandsPage() {
           <Input
             label="Brand name"
             placeholder="e.g. Panadol"
-            disabled={!!editTarget && editTarget.medicineCount > 0}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <Select
             label="Manufacturer"
-            disabled={!!editTarget && editTarget.medicineCount > 0}
             value={manufacturer}
             onChange={(e) => setManufacturer(e.target.value)}
             placeholder="Select a manufacturer"
