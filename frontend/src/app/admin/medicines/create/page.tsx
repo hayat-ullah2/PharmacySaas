@@ -12,11 +12,9 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
+import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
 import { useToast } from "@/lib/toast";
 import { usePharmacyData } from "@/lib/pharmacyData";
-
-const DOSAGE_FORMS = ["Tablet", "Capsule", "Syrup", "Softgel", "Inhaler", "Cream", "Drops", "Liquid", "Injection"];
-const UNITS = ["Tablet", "Capsule", "Bottle", "Tube", "Softgel", "Inhaler", "Strip", "Box"];
 
 export default function CreateMedicinePage() {
   const router = useRouter();

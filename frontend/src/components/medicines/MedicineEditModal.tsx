@@ -8,12 +8,10 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { Button } from "@/components/ui/Button";
 import { MEDICINES, CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
+import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { useToast } from "@/lib/toast";
 import type { Medicine } from "@/lib/types";
-
-const DOSAGE_FORMS = ["Tablet", "Capsule", "Syrup", "Softgel", "Inhaler", "Cream", "Drops", "Liquid", "Injection"];
-const UNITS = ["Tablet", "Capsule", "Bottle", "Tube", "Softgel", "Inhaler", "Strip", "Box"];
 
 /**
  * Edit a medicine's catalog details. Stock and expiry are intentionally NOT
