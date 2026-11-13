@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { Button } from "@/components/ui/Button";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 import { MEDICINES, CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
 import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
 import { usePharmacyData } from "@/lib/pharmacyData";
@@ -96,6 +97,7 @@ export function MedicineEditModal({
       }
     >
       <div className="space-y-4">
+        <ImageUpload value={form.image ?? ""} onChange={(url) => upd({ image: url || undefined })} folder="products" label="Product image" />
         <div className="grid gap-3 sm:grid-cols-2">
           <Input label="Medicine name" value={form.name} onChange={(e) => upd({ name: e.target.value })} />
           <Input label="Generic name" value={form.genericName} onChange={(e) => upd({ genericName: e.target.value })} />

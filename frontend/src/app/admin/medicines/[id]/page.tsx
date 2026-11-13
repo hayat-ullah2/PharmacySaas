@@ -94,8 +94,15 @@ export default function MedicineDetailPage() {
         {/* Left: image + quick facts */}
         <Card className="lg:col-span-1">
           <CardBody>
-            <div className="flex aspect-square w-full items-center justify-center rounded-xl bg-gradient-to-br from-primary-50 to-primary-100">
-              <Pill className="h-20 w-20 text-primary-300" />
+            <div className="aspect-square w-full overflow-hidden rounded-xl bg-gradient-to-br from-primary-50 to-primary-100">
+              {medicine.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={medicine.image} alt={medicine.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Pill className="h-20 w-20 text-primary-300" />
+                </div>
+              )}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <StatusBadge status={medicine.status} />

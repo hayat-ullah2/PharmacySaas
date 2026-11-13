@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Pill, Minus, Plus, ShoppingCart, ArrowLeft, ShieldAlert, Check, Truck, ShieldCheck, RotateCcw } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
@@ -19,7 +19,6 @@ import type { Batch } from "@/lib/types";
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { addItem } = useCart();
   const { toast } = useToast();
   const [qty, setQty] = useState(1);
@@ -80,8 +79,15 @@ export default function ProductDetailPage() {
         {/* Image */}
         <Card>
           <CardBody>
-            <div className="flex aspect-square w-full items-center justify-center rounded-xl bg-gradient-to-br from-primary-50 to-navy-50">
-              <Pill className="h-28 w-28 text-primary-200" />
+            <div className="aspect-square w-full overflow-hidden rounded-xl bg-gradient-to-br from-primary-50 to-navy-50">
+              {medicine.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={medicine.image} alt={medicine.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Pill className="h-28 w-28 text-primary-200" />
+                </div>
+              )}
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-lg bg-navy-50 p-2.5">
