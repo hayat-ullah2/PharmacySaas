@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pill, Pencil, Trash2, ArrowLeft, Package, Tag, Factory, ShieldAlert } from "lucide-react";
@@ -7,10 +8,13 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
+import { MedicineEditModal } from "@/components/medicines/MedicineEditModal";
 import { MEDICINES, BATCHES } from "@/lib/data";
+import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { Batch } from "@/lib/types";
@@ -19,6 +23,10 @@ export default function MedicineDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
+  const { deleteRecord } = usePharmacyData();
+  const [editing, setEditing] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const medicine = MEDICINES.find((m) => m.id === params.id);
 
   if (!medicine) {
@@ -72,10 +80,10 @@ export default function MedicineDetailPage() {
         ]}
         actions={
           <>
-            <Button variant="outline" onClick={() => toast({ type: "info", title: "Edit medicine", description: `${medicine.name} (demo).` })}>
+            <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" /> Edit
             </Button>
-            <Button variant="danger" onClick={() => toast({ type: "success", title: "Deleted", description: `${medicine.name} removed (demo).` })}>
+            <Button variant="danger" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="h-4 w-4" /> Delete
             </Button>
           </>
@@ -162,6 +170,44 @@ export default function MedicineDetailPage() {
           </Card>
         </div>
       </div>
+
+      {editing && (
+        <MedicineEditModal medicine={medicine} onClose={() => setEditing(false)} />
+      )}
+
+      <Modal
+        open={deleteOpen}
+        onClose={() => { if (!deleting) setDeleteOpen(false); }}
+        title="Delete medicine"
+        description={`Are you sure you want to delete ${medicine.name}? This action cannot be undone.`}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+            <Button
+              variant="danger"
+              loading={deleting}
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  await deleteRecord("medicines", medicine.id);
+                  toast({ type: "success", title: "Medicine deleted", description: `${medicine.name} removed.` });
+                  router.push("/admin/medicines");
+                } catch (deleteError) {
+                  toast({ type: "danger", title: "Unable to delete medicine", description: deleteError instanceof Error ? deleteError.message : "Please try again." });
+                  setDeleting(false);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <div className="flex items-center gap-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-700">
+          <Trash2 className="h-5 w-5 shrink-0" />
+          Deleting will remove this medicine and its listing from the catalog.
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -8,9 +8,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { Input } from "@/components/ui/Input";
-import { Textarea } from "@/components/ui/Textarea";
-import { Toggle } from "@/components/ui/Toggle";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -19,7 +16,8 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { MEDICINES, CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
+import { MedicineEditModal } from "@/components/medicines/MedicineEditModal";
+import { MEDICINES, CATEGORIES, BRANDS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate, paginate } from "@/lib/utils";
 import { exportToCsv } from "@/lib/csv";
@@ -28,13 +26,10 @@ import type { Medicine } from "@/lib/types";
 
 const PER_PAGE = 8;
 
-const DOSAGE_FORMS = ["Tablet", "Capsule", "Syrup", "Softgel", "Inhaler", "Cream", "Drops", "Liquid", "Injection"];
-const UNITS = ["Tablet", "Capsule", "Bottle", "Tube", "Softgel", "Inhaler", "Strip", "Box"];
-
 export default function MedicinesPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { deleteRecord, saveRecord } = usePharmacyData();
+  const { deleteRecord } = usePharmacyData();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
@@ -43,55 +38,6 @@ export default function MedicinesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Medicine | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [editTarget, setEditTarget] = useState<Medicine | null>(null);
-  const [savingEdit, setSavingEdit] = useState(false);
-
-  const updEdit = (patch: Partial<Medicine>) => setEditTarget((cur) => (cur ? { ...cur, ...patch } : cur));
-
-  const saveMedicineEdit = async () => {
-    if (!editTarget) return;
-    const trimmedName = editTarget.name.trim();
-    const strength = (editTarget.strength ?? "").trim();
-    if (trimmedName.length < 2) {
-      toast({ type: "warning", title: "Name required", description: "Enter a medicine name (at least 2 characters)." });
-      return;
-    }
-    if (!(editTarget.sellingPrice > 0)) {
-      toast({ type: "warning", title: "Invalid price", description: "Selling price must be greater than 0." });
-      return;
-    }
-    if (editTarget.purchasePrice < 0 || editTarget.reorderLevel < 0) {
-      toast({ type: "warning", title: "Invalid value", description: "Purchase price and reorder level cannot be negative." });
-      return;
-    }
-    const duplicate = MEDICINES.some(
-      (m) =>
-        m.id !== editTarget.id &&
-        m.name.trim().toLowerCase() === trimmedName.toLowerCase() &&
-        (m.strength ?? "").trim().toLowerCase() === strength.toLowerCase(),
-    );
-    if (duplicate) {
-      toast({ type: "warning", title: "Already exists", description: `A medicine named "${[trimmedName, strength].filter(Boolean).join(" ")}" already exists.` });
-      return;
-    }
-    setSavingEdit(true);
-    try {
-      // Preserve stock, expiry, and status — those are managed via batches / stock adjustments.
-      await saveRecord("medicines", {
-        ...editTarget,
-        name: trimmedName,
-        genericName: editTarget.genericName.trim(),
-        strength,
-        sku: (editTarget.sku ?? "").trim(),
-        description: (editTarget.description ?? "").trim(),
-      });
-      toast({ type: "success", title: "Medicine updated", description: `${trimmedName} saved.` });
-      setEditTarget(null);
-    } catch (saveError) {
-      toast({ type: "danger", title: "Unable to update medicine", description: saveError instanceof Error ? saveError.message : "Please try again." });
-    } finally {
-      setSavingEdit(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     return MEDICINES.filter((m) => {
@@ -266,44 +212,9 @@ export default function MedicinesPage() {
         )}
       </Card>
 
-      {/* Edit medicine modal */}
-      <Modal
-        open={!!editTarget}
-        onClose={() => { if (!savingEdit) setEditTarget(null); }}
-        title="Edit Medicine"
-        description="Update catalog details. Stock and expiry are managed from Batches and Stock Adjustments."
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setEditTarget(null)} disabled={savingEdit}>Cancel</Button>
-            <Button onClick={saveMedicineEdit} loading={savingEdit} disabled={!editTarget?.name.trim()}>Save Changes</Button>
-          </>
-        }
-      >
-        {editTarget && (
-          <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input label="Medicine name" value={editTarget.name} onChange={(e) => updEdit({ name: e.target.value })} />
-              <Input label="Generic name" value={editTarget.genericName} onChange={(e) => updEdit({ genericName: e.target.value })} />
-              <Select label="Category" value={editTarget.category} onChange={(e) => updEdit({ category: e.target.value })} placeholder="Select category" options={CATEGORIES.map((c) => ({ value: c.name, label: c.name }))} />
-              <Select label="Brand" value={editTarget.brand} onChange={(e) => updEdit({ brand: e.target.value })} placeholder="Select brand" options={BRANDS.map((b) => ({ value: b.name, label: b.name }))} />
-              <Select label="Manufacturer" value={editTarget.manufacturer} onChange={(e) => updEdit({ manufacturer: e.target.value })} placeholder="Select manufacturer" options={MANUFACTURERS.map((m) => ({ value: m.name, label: m.name }))} />
-              <Select label="Dosage form" value={editTarget.dosageForm} onChange={(e) => updEdit({ dosageForm: e.target.value })} placeholder="Select form" options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
-              <Input label="Strength" value={editTarget.strength} onChange={(e) => updEdit({ strength: e.target.value })} />
-              <Select label="Unit" value={editTarget.unit} onChange={(e) => updEdit({ unit: e.target.value })} placeholder="Select unit" options={UNITS.map((u) => ({ value: u, label: u }))} />
-              <Input label="Selling price (Rs)" type="number" min={0} step="0.01" value={editTarget.sellingPrice} onChange={(e) => updEdit({ sellingPrice: Number(e.target.value) })} />
-              <Input label="Purchase price (Rs)" type="number" min={0} step="0.01" value={editTarget.purchasePrice} onChange={(e) => updEdit({ purchasePrice: Number(e.target.value) })} />
-              <Input label="Reorder level" type="number" min={0} value={editTarget.reorderLevel} onChange={(e) => updEdit({ reorderLevel: Number(e.target.value) })} />
-              <Input label="SKU / Barcode" value={editTarget.sku ?? ""} onChange={(e) => updEdit({ sku: e.target.value })} />
-            </div>
-            <Toggle
-              label="Prescription required"
-              checked={editTarget.prescriptionRequired}
-              onChange={(v) => updEdit({ prescriptionRequired: v })}
-            />
-            <Textarea label="Description" rows={3} value={editTarget.description ?? ""} onChange={(e) => updEdit({ description: e.target.value })} />
-          </div>
-        )}
-      </Modal>
+      {editTarget && (
+        <MedicineEditModal medicine={editTarget} onClose={() => setEditTarget(null)} />
+      )}
 
       <Modal
         open={!!deleteTarget}
