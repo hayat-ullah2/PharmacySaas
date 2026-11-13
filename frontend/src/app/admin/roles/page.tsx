@@ -14,12 +14,10 @@ type ActionKey = "view" | "create" | "edit" | "delete";
 type Actions = Record<ActionKey, boolean>;
 type Matrix = Record<string, Actions>;
 
+// The system only has two roles: the pharmacy Owner (admin) and the Manager (POS).
 const ROLES: { key: Role; name: string; description: string }[] = [
-  { key: "admin", name: "Admin", description: "Full system access and configuration control." },
-  { key: "manager", name: "Manager", description: "Oversees operations, reports, and daily workflow." },
-  { key: "pharmacist", name: "Pharmacist", description: "Reviews prescriptions and dispenses medicines." },
-  { key: "cashier", name: "Cashier", description: "Handles sales, billing, and customer checkout." },
-  { key: "inventory", name: "Inventory Staff", description: "Manages stock, batches, and purchase receiving." },
+  { key: "admin", name: "Admin (Owner)", description: "Full system access and configuration control." },
+  { key: "manager", name: "Manager (POS)", description: "Point-of-sale only: sales, returns, prescriptions, and billing customers." },
 ];
 
 const MODULES = [
@@ -38,64 +36,25 @@ const ACTIONS: ActionKey[] = ["view", "create", "edit", "delete"];
 
 const all = (view = true, create = true, edit = true, del = true): Actions => ({ view, create, edit, delete: del });
 
-/** Sensible default permission pattern per role. */
+/** What each role can actually do (reference; real access is enforced by RLS). */
 function defaults(role: Role): Matrix {
   const viewOnly = all(true, false, false, false);
   const none = all(false, false, false, false);
   if (role === "admin") {
     return Object.fromEntries(MODULES.map((m) => [m.key, all()])) as Matrix;
   }
-  const base: Record<string, Actions> = {
-    // Non-admins get view-only on Users & Settings by default
-    users: viewOnly,
-    settings: viewOnly,
-  };
-  if (role === "manager") {
-    return {
-      medicines: all(true, true, true, false),
-      inventory: all(true, true, true, false),
-      sales: all(true, true, true, false),
-      purchases: all(true, true, true, false),
-      customers: all(true, true, true, false),
-      prescriptions: all(true, true, true, false),
-      reports: viewOnly,
-      ...base,
-    };
-  }
-  if (role === "pharmacist") {
-    return {
-      medicines: viewOnly,
-      inventory: viewOnly,
-      sales: all(true, true, false, false),
-      purchases: none,
-      customers: all(true, true, false, false),
-      prescriptions: all(true, true, true, false),
-      reports: viewOnly,
-      ...base,
-    };
-  }
-  if (role === "cashier") {
-    return {
-      medicines: viewOnly,
-      inventory: none,
-      sales: all(true, true, true, false),
-      purchases: none,
-      customers: all(true, true, false, false),
-      prescriptions: viewOnly,
-      reports: none,
-      ...base,
-    };
-  }
-  // inventory staff
+  // Manager = POS only: browse products, ring up sales, add billing customers,
+  // and dispense approved prescriptions. No inventory/purchasing/admin modules.
   return {
-    medicines: all(true, true, true, false),
-    inventory: all(true, true, true, true),
-    sales: none,
-    purchases: all(true, true, true, false),
-    customers: none,
-    prescriptions: none,
-    reports: viewOnly,
-    ...base,
+    medicines: viewOnly,
+    inventory: none,
+    sales: all(true, true, false, false),
+    purchases: none,
+    customers: all(true, true, false, false),
+    prescriptions: all(true, true, false, false),
+    users: none,
+    reports: none,
+    settings: none,
   };
 }
 
@@ -133,7 +92,7 @@ export default function RolesPage() {
       />
 
       {/* Role cards */}
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
         {ROLES.map((r) => {
           const active = r.key === role;
           return (
