@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,12 +14,15 @@ import {
   CreditCard,
   AlertTriangle,
   Receipt,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/Textarea";
 import { Modal } from "@/components/ui/Modal";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Tabs } from "@/components/ui/Tabs";
@@ -28,6 +31,7 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
 import { SUPPLIERS, PURCHASES, PAYMENTS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
+import { isValidPakistaniPhone, sanitizePhoneInput } from "@/lib/phone";
 import { formatRs, formatDate, initials } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { Purchase, Payment, PaymentMethod } from "@/lib/types";
@@ -59,8 +63,9 @@ const TABS = [
 
 export default function SupplierDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { toast } = useToast();
-  const { saveRecord } = usePharmacyData();
+  const { saveRecord, deleteRecord } = usePharmacyData();
   const supplier = SUPPLIERS.find((s) => s.id === params.id);
 
   const [tab, setTab] = useState("purchases");
@@ -69,7 +74,74 @@ export default function SupplierDetailPage() {
   const [payAmount, setPayAmount] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Edit + delete
+  const [editOpen, setEditOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [editStatus, setEditStatus] = useState("active");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const supplierName = supplier?.name ?? "";
+
+  const openEdit = () => {
+    if (!supplier) return;
+    setName(supplier.name);
+    setContactPerson(supplier.contactPerson);
+    setPhone(supplier.phone);
+    setEmail(supplier.email);
+    setAddress(supplier.address);
+    setEditStatus(supplier.status);
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!supplier) return;
+    if (name.trim().length < 2) {
+      toast({ type: "warning", title: "Name required", description: "Enter a supplier name (at least 2 characters)." });
+      return;
+    }
+    const trimmedPhone = phone.trim();
+    if (trimmedPhone && !isValidPakistaniPhone(trimmedPhone)) {
+      toast({ type: "warning", title: "Invalid phone number", description: "Enter a valid Pakistani number, e.g. 03001234567 or +92 21 3453 0001." });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await saveRecord("suppliers", {
+        ...supplier,
+        name: name.trim(),
+        contactPerson: contactPerson.trim(),
+        phone: trimmedPhone,
+        email: email.trim(),
+        address: address.trim(),
+        status: editStatus as "active" | "inactive",
+      });
+      toast({ type: "success", title: "Supplier updated", description: `${name.trim()} saved.` });
+      setEditOpen(false);
+    } catch (saveError) {
+      toast({ type: "danger", title: "Unable to update supplier", description: saveError instanceof Error ? saveError.message : "Please try again." });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const deleteSupplier = async () => {
+    if (!supplier) return;
+    setDeleting(true);
+    try {
+      await deleteRecord("suppliers", supplier.id);
+      toast({ type: "success", title: "Supplier deleted", description: `${supplier.name} removed.` });
+      router.push("/admin/suppliers");
+    } catch (deleteError) {
+      toast({ type: "danger", title: "Unable to delete supplier", description: deleteError instanceof Error ? deleteError.message : "Please try again." });
+      setDeleting(false);
+    }
+  };
 
   const recordPayment = async () => {
     if (!supplier) return;
@@ -102,19 +174,8 @@ export default function SupplierDetailPage() {
     }
   };
 
-  const purchases = useMemo(
-    () => PURCHASES.filter((p) => p.supplier === supplierName),
-    [supplierName],
-  );
-
-  const payments = useMemo<Payment[]>(() => {
-    const matched = PAYMENTS.filter((p) => p.party === supplierName && p.type === "outgoing");
-    if (matched.length > 0) return matched;
-    return [
-      { id: "d1", reference: "PMT-0000", party: supplierName, type: "outgoing", amount: 50000, method: "bank", date: "2026-09-15", status: "completed" },
-      { id: "d2", reference: "PMT-0001", party: supplierName, type: "outgoing", amount: 30000, method: "cash", date: "2026-08-28", status: "completed" },
-    ];
-  }, [supplierName]);
+  const purchases = PURCHASES.filter((p) => p.supplier === supplierName);
+  const payments: Payment[] = PAYMENTS.filter((p) => p.party === supplierName && p.type === "outgoing");
 
   if (!supplier) {
     return (
@@ -191,9 +252,17 @@ export default function SupplierDetailPage() {
           { label: supplier.name },
         ]}
         actions={
-          <Button onClick={() => setPayOpen(true)}>
-            <CreditCard className="h-4 w-4" /> Record Payment
-          </Button>
+          <>
+            <Button variant="outline" onClick={openEdit}>
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+            <Button onClick={() => setPayOpen(true)}>
+              <CreditCard className="h-4 w-4" /> Record Payment
+            </Button>
+            <Button variant="danger" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4" /> Delete
+            </Button>
+          </>
         }
       />
 
@@ -319,6 +388,50 @@ export default function SupplierDetailPage() {
               { value: "other", label: "Other" },
             ]}
           />
+        </div>
+      </Modal>
+
+      {/* Edit supplier modal */}
+      <Modal
+        open={editOpen}
+        onClose={() => { if (!savingEdit) setEditOpen(false); }}
+        title="Edit Supplier"
+        description="Update this supplier's details."
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={savingEdit}>Cancel</Button>
+            <Button onClick={saveEdit} loading={savingEdit} disabled={!name.trim()}>Save Changes</Button>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input label="Supplier Name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. United Distributors" />
+          <Input label="Contact Person" value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="e.g. Sana Riaz" />
+          <Input label="Phone" type="tel" inputMode="tel" maxLength={16} value={phone} onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))} placeholder="03001234567 or +92 ..." hint="Pakistani number only" />
+          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="orders@example.pk" />
+          <Select label="Status" value={editStatus} onChange={(e) => setEditStatus(e.target.value)} options={[{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }]} />
+          <div className="sm:col-span-2">
+            <Textarea label="Address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, area, city" rows={2} />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete supplier modal */}
+      <Modal
+        open={deleteOpen}
+        onClose={() => { if (!deleting) setDeleteOpen(false); }}
+        title="Delete supplier"
+        description={`Are you sure you want to delete ${supplier.name}? This action cannot be undone.`}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+            <Button variant="danger" onClick={deleteSupplier} loading={deleting}>Delete</Button>
+          </>
+        }
+      >
+        <div className="flex items-center gap-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-700">
+          <Trash2 className="h-5 w-5 shrink-0" />
+          This removes the supplier from your list. Past purchase records keep their supplier name.
         </div>
       </Modal>
     </div>
