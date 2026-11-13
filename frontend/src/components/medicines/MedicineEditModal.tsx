@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { Button } from "@/components/ui/Button";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { MEDICINES, CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
 import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
+import { validatePackUnits } from "@/lib/units";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { useToast } from "@/lib/toast";
 import type { Medicine } from "@/lib/types";
@@ -61,6 +63,12 @@ export function MedicineEditModal({
       toast({ type: "warning", title: "Already exists", description: `A medicine named "${[trimmedName, strength].filter(Boolean).join(" ")}" already exists.` });
       return;
     }
+    const packs = (form.packUnits ?? []).filter((p) => p.name.trim() || p.factor || p.price);
+    const packError = validatePackUnits(packs, form.unit);
+    if (packError) {
+      toast({ type: "warning", title: "Check packaging", description: packError });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -72,6 +80,8 @@ export function MedicineEditModal({
         strength,
         sku: (form.sku ?? "").trim(),
         description: (form.description ?? "").trim(),
+        packUnits: packs.length ? packs : undefined,
+        allowLoose: form.allowLoose ?? true,
       });
       toast({ type: "success", title: "Medicine updated", description: `${trimmedName} saved.` });
       onSaved?.();
@@ -113,6 +123,16 @@ export function MedicineEditModal({
           <Input label="SKU / Barcode" value={form.sku ?? ""} onChange={(e) => upd({ sku: e.target.value })} />
         </div>
         <Toggle label="Prescription required" checked={form.prescriptionRequired} onChange={(v) => upd({ prescriptionRequired: v })} />
+        <PackagingEditor
+          baseUnit={form.unit}
+          basePrice={form.sellingPrice}
+          productType={form.productType ?? ""}
+          packUnits={form.packUnits ?? []}
+          allowLoose={form.allowLoose !== false}
+          onProductType={(v) => upd({ productType: v })}
+          onPackUnits={(v) => upd({ packUnits: v })}
+          onAllowLoose={(v) => upd({ allowLoose: v })}
+        />
         <Textarea label="Description" rows={3} value={form.description ?? ""} onChange={(e) => upd({ description: e.target.value })} />
       </div>
     </Modal>

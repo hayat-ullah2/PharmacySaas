@@ -34,6 +34,10 @@ export interface Medicine {
   status: StockStatus;
   sku: string;
   image?: string; // Cloudinary secure URL
+  // --- Multi-unit packaging (optional; absent = single-unit product) ---
+  productType?: string; // e.g. Tablet, Syrup, Injection — for guidance only
+  packUnits?: MedicineUnit[]; // larger packs (factor > 1): Strip, Box, Carton…
+  allowLoose?: boolean; // can the base unit be sold singly? (default true)
 }
 
 export interface Category {
@@ -119,6 +123,13 @@ export interface Purchase {
 
 export type PaymentMethod = "cash" | "card" | "bank" | "other";
 export type SaleStatus = "paid" | "pending" | "refunded" | "partial";
+
+/** A sellable packaging unit for a medicine (e.g. Strip = 10 base units @ Rs 50). */
+export interface MedicineUnit {
+  name: string;
+  factor: number; // how many BASE units one of this unit contains (base unit = 1)
+  price: number; // selling price for ONE of this unit (may be non-proportional)
+}
 
 export interface SaleItem {
   medicineId?: string;

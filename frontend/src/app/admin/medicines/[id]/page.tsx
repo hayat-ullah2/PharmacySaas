@@ -14,6 +14,7 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
 import { MedicineEditModal } from "@/components/medicines/MedicineEditModal";
 import { MEDICINES, BATCHES } from "@/lib/data";
+import { sellableUnits } from "@/lib/units";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
@@ -148,6 +149,25 @@ export default function MedicineDetailPage() {
               </dl>
             </CardBody>
           </Card>
+
+          {medicine.packUnits && medicine.packUnits.length > 0 && (
+            <Card>
+              <CardHeader title="Packaging & Pricing" subtitle={medicine.allowLoose === false ? "Sold only in packs" : `Loose selling by ${medicine.unit} allowed`} />
+              <CardBody>
+                <div className="divide-y divide-navy-50">
+                  {sellableUnits(medicine).map((u) => (
+                    <div key={u.name} className="flex items-center justify-between py-2 text-sm">
+                      <span className="text-navy-700">
+                        {u.name}
+                        {u.factor > 1 && <span className="ml-1.5 text-xs text-navy-400">= {u.factor} {medicine.unit}</span>}
+                      </span>
+                      <span className="font-semibold text-navy-900">{formatRs(u.price)}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          )}
 
           <Card>
             <CardHeader title="Description & Usage" />

@@ -11,10 +11,13 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
 import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
+import { validatePackUnits } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { usePharmacyData } from "@/lib/pharmacyData";
+import type { MedicineUnit } from "@/lib/types";
 
 export default function CreateMedicinePage() {
   const router = useRouter();
@@ -23,6 +26,12 @@ export default function CreateMedicinePage() {
   const [rxRequired, setRxRequired] = useState(false);
   const [image, setImage] = useState("");
   const [saving, setSaving] = useState(false);
+  // Controlled so the packaging editor can show the live base unit + price.
+  const [unit, setUnit] = useState("");
+  const [sellingPriceStr, setSellingPriceStr] = useState("");
+  const [productType, setProductType] = useState("");
+  const [packUnits, setPackUnits] = useState<MedicineUnit[]>([]);
+  const [allowLoose, setAllowLoose] = useState(true);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,6 +47,10 @@ export default function CreateMedicinePage() {
         throw new Error("Stock, reorder level, and prices must be valid non-negative numbers.");
       }
       if (!expiry) throw new Error("Enter the nearest expiry date for this medicine.");
+
+      const cleanPacks = packUnits.filter((p) => p.name.trim() || p.factor || p.price);
+      const packError = validatePackUnits(cleanPacks, String(values.get("unit") ?? ""));
+      if (packError) throw new Error(packError);
 
       const today = new Date();
       const daysUntilExpiry = Math.ceil((new Date(`${expiry}T00:00:00`).getTime() - today.getTime()) / 86_400_000);
@@ -71,6 +84,9 @@ export default function CreateMedicinePage() {
         status,
         sku: String(values.get("sku") ?? "").trim(),
         image: image || undefined,
+        productType: productType || undefined,
+        packUnits: cleanPacks.length ? cleanPacks : undefined,
+        allowLoose,
       });
       toast({ type: "success", title: "Medicine created", description: "The medicine is now available to managers in this pharmacy." });
       router.push("/admin/medicines");
@@ -115,19 +131,35 @@ export default function CreateMedicinePage() {
             <CardBody className="grid gap-4 sm:grid-cols-3">
               <Select name="dosageForm" label="Dosage Form" placeholder="Select form" options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
               <Input name="strength" label="Strength" placeholder="e.g. 500mg" />
-              <Select name="unit" label="Unit" placeholder="Select unit" options={UNITS.map((u) => ({ value: u, label: u }))} />
+              <Select name="unit" label="Unit" placeholder="Select unit" options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader title="Pricing & Stock" subtitle="Pricing and reorder configuration" />
             <CardBody className="grid gap-4 sm:grid-cols-2">
-              <Input name="sellingPrice" label="Selling Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required />
+              <Input name="sellingPrice" label="Selling Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required value={sellingPriceStr} onChange={(e) => setSellingPriceStr(e.target.value)} />
               <Input name="purchasePrice" label="Purchase Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required />
               <Input name="reorderLevel" label="Reorder Level" type="number" placeholder="e.g. 30" min={0} required />
               <Input name="stock" label="Opening Stock" type="number" placeholder="0" min={0} required />
               <Input name="expiry" label="Nearest Batch Expiry" type="date" required />
               <Input name="sku" label="SKU / Barcode" placeholder="e.g. PAN-500" />
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader title="Packaging & Units" subtitle="Optional — sell in strips, boxes, or cartons with their own prices" />
+            <CardBody>
+              <PackagingEditor
+                baseUnit={unit}
+                basePrice={Number(sellingPriceStr) || 0}
+                productType={productType}
+                packUnits={packUnits}
+                allowLoose={allowLoose}
+                onProductType={setProductType}
+                onPackUnits={setPackUnits}
+                onAllowLoose={setAllowLoose}
+              />
             </CardBody>
           </Card>
 
