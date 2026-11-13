@@ -121,10 +121,12 @@ export type PaymentMethod = "cash" | "card" | "bank" | "other";
 export type SaleStatus = "paid" | "pending" | "refunded" | "partial";
 
 export interface SaleItem {
+  medicineId?: string;
   medicineName: string;
   quantity: number;
   price: number;
   subtotal: number;
+  returnedQty?: number;
 }
 
 export interface Sale {
@@ -137,6 +139,9 @@ export interface Sale {
   discount: number;
   tax: number;
   total: number;
+  amountPaid?: number;
+  outstanding?: number;
+  returnedAmount?: number;
   payment: PaymentMethod;
   status: SaleStatus;
   date: string;

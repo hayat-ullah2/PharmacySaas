@@ -26,7 +26,7 @@ interface PharmacyDataContextValue {
   addBatch: (batch: Record<string, unknown>) => Promise<void>;
   adjustStock: (medicineId: string, newStock: number, reason: string) => Promise<void>;
   receivePurchase: (purchaseId: string) => Promise<void>;
-  recordSaleReturn: (saleId: string, reason: string) => Promise<void>;
+  recordSaleReturn: (saleId: string, items: { medicineId: string; quantity: number }[], reason: string) => Promise<void>;
   recordPurchaseReturn: (purchaseId: string, reason: string) => Promise<void>;
   deleteRecord: (entity: string, id: string) => Promise<void>;
   inviteManager: (name: string, email: string) => Promise<void>;
@@ -219,12 +219,13 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
     await reload();
   }, [user, reload]);
 
-  const recordSaleReturn = useCallback(async (saleId: string, reason: string) => {
+  const recordSaleReturn = useCallback(async (saleId: string, items: { medicineId: string; quantity: number }[], reason: string) => {
     if (!user || (user.role !== "admin" && user.role !== "manager")) {
       throw new Error("You are not allowed to process returns.");
     }
     const { error: returnError } = await getSupabaseClient().rpc("record_sale_return", {
       p_sale_id: saleId,
+      p_items: items,
       p_reason: reason,
     });
     if (returnError) throw returnError;

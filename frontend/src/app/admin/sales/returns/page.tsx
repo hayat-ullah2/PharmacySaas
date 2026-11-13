@@ -43,13 +43,21 @@ export default function SalesReturnsPage() {
   }, [search, status]);
 
   const submit = async () => {
-    if (!saleId) {
+    if (!saleId || !selectedSale) {
       toast({ type: "warning", title: "Select an invoice", description: "Choose the sale to return against." });
+      return;
+    }
+    // Admin return processes all remaining (not-yet-returned) items of the sale.
+    const items = selectedSale.items
+      .map((it) => ({ medicineId: it.medicineId as string, quantity: it.quantity - (it.returnedQty ?? 0) }))
+      .filter((it) => it.medicineId && it.quantity > 0);
+    if (items.length === 0) {
+      toast({ type: "warning", title: "Nothing to return", description: "This sale has no remaining returnable items." });
       return;
     }
     setSaving(true);
     try {
-      await recordSaleReturn(saleId, reason.trim());
+      await recordSaleReturn(saleId, items, reason.trim());
       toast({ type: "success", title: "Return processed", description: "Items restocked and the sale was refunded." });
       setOpen(false);
       setSaleId("");
