@@ -1,6 +1,7 @@
 "use client";
 
-import type { Medicine, Prescription } from "./types";
+import type { Medicine, MedicineUnit, Prescription } from "./types";
+import { baseUnit } from "./units";
 
 export interface DispenseResult {
   added: number;
@@ -14,7 +15,7 @@ export interface DispenseResult {
 export function dispensePrescriptionToCart(
   rx: Prescription,
   medicines: Medicine[],
-  addItem: (medicine: Medicine, qty?: number) => void,
+  addItem: (medicine: Medicine, unit: MedicineUnit, qty?: number) => void,
 ): DispenseResult {
   let added = 0;
   const missing: string[] = [];
@@ -24,7 +25,8 @@ export function dispensePrescriptionToCart(
       (m) => name === `${m.name} ${m.strength}`.toLowerCase() || name.startsWith(m.name.toLowerCase()),
     );
     if (med && med.stock > 0) {
-      addItem(med, Math.min(pm.qty, med.stock));
+      // Prescriptions dispense in the base (loose) unit.
+      addItem(med, baseUnit(med), Math.min(pm.qty, med.stock));
       added += 1;
     } else {
       missing.push(pm.name);

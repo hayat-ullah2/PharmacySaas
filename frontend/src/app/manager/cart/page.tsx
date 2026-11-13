@@ -53,7 +53,7 @@ export default function CartPage() {
           <CardHeader title="Cart Items" subtitle={`${items.length} product line(s)`} />
           <CardBody className="space-y-3">
             {items.map((item) => (
-              <div key={item.medicineId} className="flex items-center gap-3 rounded-xl border border-navy-100 p-3">
+              <div key={item.key} className="flex items-center gap-3 rounded-xl border border-navy-100 p-3">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-300">
                   <Pill className="h-7 w-7" />
                 </span>
@@ -63,6 +63,7 @@ export default function CartPage() {
                     {item.prescriptionRequired && <Badge tone="danger"><ShieldAlert className="h-3 w-3" /> Rx</Badge>}
                   </div>
                   <p className="text-xs text-navy-400">{item.genericName} · {item.strength}</p>
+                  <p className="mt-0.5 text-xs font-medium text-primary-600">Per {item.unit}{item.factor > 1 ? ` · ${item.factor} base units` : ""}</p>
                   <p className="mt-0.5 text-sm font-semibold text-navy-700 sm:hidden">{formatRs(item.price)}</p>
                 </div>
 
@@ -70,7 +71,7 @@ export default function CartPage() {
 
                 <div className="flex items-center rounded-lg border border-navy-200">
                   <button
-                    onClick={() => updateQty(item.medicineId, item.quantity - 1)}
+                    onClick={() => updateQty(item.key, item.quantity - 1)}
                     aria-label="Decrease"
                     className="flex h-8 w-8 items-center justify-center text-navy-600 hover:bg-navy-50"
                   >
@@ -78,7 +79,7 @@ export default function CartPage() {
                   </button>
                   <span className="w-8 text-center text-sm font-semibold text-navy-900">{item.quantity}</span>
                   <button
-                    onClick={() => updateQty(item.medicineId, item.quantity + 1)}
+                    onClick={() => updateQty(item.key, item.quantity + 1)}
                     aria-label="Increase"
                     className="flex h-8 w-8 items-center justify-center text-navy-600 hover:bg-navy-50"
                   >
@@ -91,7 +92,7 @@ export default function CartPage() {
                 </p>
 
                 <button
-                  onClick={() => { removeItem(item.medicineId); toast({ type: "info", title: "Removed", description: item.name }); }}
+                  onClick={() => { removeItem(item.key); toast({ type: "info", title: "Removed", description: `${item.name} (${item.unit})` }); }}
                   aria-label={`Remove ${item.name}`}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-navy-400 hover:bg-danger-50 hover:text-danger-600"
                 >
@@ -108,8 +109,8 @@ export default function CartPage() {
             <CardHeader title="Order Summary" />
             <CardBody className="space-y-3">
               <SummaryRow label="Subtotal" value={formatRs(totals.subtotal)} />
-              <SummaryRow label="Discount (5%)" value={`- ${formatRs(totals.discount)}`} valueClass="text-success-600" />
-              <SummaryRow label="Tax" value={formatRs(totals.tax)} />
+              {totals.discount > 0 && <SummaryRow label="Discount" value={`- ${formatRs(totals.discount)}`} valueClass="text-success-600" />}
+              {totals.tax > 0 && <SummaryRow label="Tax" value={formatRs(totals.tax)} />}
               <div className="border-t border-navy-100 pt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold text-navy-900">Grand Total</span>

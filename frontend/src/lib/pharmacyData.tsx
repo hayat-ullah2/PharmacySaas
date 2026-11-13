@@ -298,6 +298,7 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
         p_customer_id: customerId,
         p_items: items.map((item) => ({
           medicine_id: item.medicineId,
+          unit: item.unit,
           quantity: item.quantity,
         })),
         p_payment: payment,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Pill, Plus, ShieldAlert, Check } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
+import { sellableUnits, baseUnit } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { Badge } from "@/components/ui/Badge";
 import { formatRs, cn } from "@/lib/utils";
@@ -20,9 +21,12 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
     e.preventDefault();
     e.stopPropagation();
     if (outOfStock) return;
-    addItem(medicine, 1);
+    // Quick-add the smallest sellable unit (loose tablet / single bottle…).
+    const units = sellableUnits(medicine);
+    const smallest = units[units.length - 1] ?? baseUnit(medicine);
+    addItem(medicine, smallest, 1);
     setAdded(true);
-    toast({ type: "success", title: "Added to cart", description: `${medicine.name} ${medicine.strength}` });
+    toast({ type: "success", title: "Added to cart", description: `1 ${smallest.name} · ${medicine.name}` });
     setTimeout(() => setAdded(false), 1400);
   };
 

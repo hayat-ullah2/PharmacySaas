@@ -267,12 +267,15 @@ export interface PharmacySettings {
 
 // ---- Cart ----
 export interface CartItem {
+  key: string; // medicineId + unit — unique per line (multiple units per medicine)
   medicineId: string;
   name: string;
   genericName: string;
   strength: string;
-  price: number;
-  quantity: number;
-  stock: number;
+  unit: string; // selected selling unit (Box / Strip / Tablet / Bottle…)
+  factor: number; // base units per selected unit
+  price: number; // price for ONE of the selected unit
+  quantity: number; // number of the selected unit
+  stock: number; // medicine base-unit stock (for validation)
   prescriptionRequired: boolean;
 }

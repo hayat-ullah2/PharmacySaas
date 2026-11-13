@@ -210,9 +210,9 @@ export default function CheckoutPage() {
             <CardBody className="space-y-3">
               <div className="max-h-48 space-y-2 overflow-y-auto">
                 {items.map((i) => (
-                  <div key={i.medicineId} className="flex items-center justify-between gap-2 text-sm">
+                  <div key={i.key} className="flex items-center justify-between gap-2 text-sm">
                     <span className="min-w-0 truncate text-navy-600">
-                      <span className="font-medium text-navy-800">{i.quantity}×</span> {i.name} {i.strength}
+                      <span className="font-medium text-navy-800">{i.quantity}× {i.unit}</span> · {i.name} {i.strength}
                     </span>
                     <span className="shrink-0 font-medium text-navy-800">{formatRs(i.price * i.quantity)}</span>
                   </div>

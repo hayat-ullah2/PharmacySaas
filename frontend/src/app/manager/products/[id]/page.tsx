@@ -7,6 +7,7 @@ import { Pill, Minus, Plus, ShoppingCart, ArrowLeft, ShieldAlert, Check, Truck, 
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
@@ -14,6 +15,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MEDICINES, BATCHES } from "@/lib/data";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
+import { sellableUnits, baseUnit } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import type { Batch } from "@/lib/types";
 
@@ -23,6 +25,7 @@ export default function ProductDetailPage() {
   const { toast } = useToast();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [unitName, setUnitName] = useState("");
 
   const medicine = MEDICINES.find((m) => m.id === params.id);
 
@@ -43,13 +46,15 @@ export default function ProductDetailPage() {
 
   const batches = BATCHES.filter((b) => b.medicineId === medicine.id);
   const outOfStock = medicine.stock <= 0;
-  const maxQty = Math.max(1, medicine.stock);
+  const units = sellableUnits(medicine);
+  const selectedUnit = units.find((u) => u.name === unitName) ?? units[units.length - 1] ?? baseUnit(medicine);
+  const maxQty = Math.max(1, Math.floor(medicine.stock / selectedUnit.factor));
 
   const add = () => {
     if (outOfStock) return;
-    addItem(medicine, qty);
+    addItem(medicine, selectedUnit, qty);
     setAdded(true);
-    toast({ type: "success", title: "Added to cart", description: `${qty} × ${medicine.name} ${medicine.strength}` });
+    toast({ type: "success", title: "Added to cart", description: `${qty} ${selectedUnit.name} · ${medicine.name}` });
     setTimeout(() => setAdded(false), 1500);
   };
 
@@ -122,16 +127,27 @@ export default function ProductDetailPage() {
               <p className="text-navy-500">{medicine.genericName} · {medicine.strength} · {medicine.dosageForm}</p>
 
               <div className="mt-4 flex items-end gap-3">
-                <span className="text-3xl font-bold text-navy-900">{formatRs(medicine.sellingPrice)}</span>
-                <span className="mb-1 text-sm text-navy-400">per {medicine.unit.toLowerCase()}</span>
+                <span className="text-3xl font-bold text-navy-900">{formatRs(selectedUnit.price)}</span>
+                <span className="mb-1 text-sm text-navy-400">per {selectedUnit.name.toLowerCase()}</span>
               </div>
 
               <div className="mt-3 flex items-center gap-2">
                 <StatusBadge status={medicine.status} />
                 <span className="text-sm text-navy-500">
-                  {outOfStock ? "Currently unavailable" : `${medicine.stock} units available`}
+                  {outOfStock ? "Currently unavailable" : `${maxQty} ${selectedUnit.name} available`}
                 </span>
               </div>
+
+              {units.length > 1 && (
+                <div className="mt-4 max-w-[15rem]">
+                  <Select
+                    label="Sell by unit"
+                    value={selectedUnit.name}
+                    onChange={(e) => { setUnitName(e.target.value); setQty(1); }}
+                    options={units.map((u) => ({ value: u.name, label: `${u.name} — ${formatRs(u.price)}${u.factor > 1 ? ` (${u.factor} ${medicine.unit})` : ""}` }))}
+                  />
+                </div>
+              )}
 
               {/* Quantity */}
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -156,7 +172,7 @@ export default function ProductDetailPage() {
                 </div>
                 <Button size="lg" className="flex-1" onClick={add} disabled={outOfStock}>
                   {added ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
-                  {added ? "Added to cart" : outOfStock ? "Out of stock" : `Add to Cart · ${formatRs(medicine.sellingPrice * qty)}`}
+                  {added ? "Added to cart" : outOfStock ? "Out of stock" : `Add to Cart · ${formatRs(selectedUnit.price * qty)}`}
                 </Button>
               </div>
 
