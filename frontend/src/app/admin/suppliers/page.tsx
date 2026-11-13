@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/States";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PURCHASES, SUPPLIERS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
+import { isValidPakistaniPhone, sanitizePhoneInput } from "@/lib/phone";
 import { formatRs, paginate } from "@/lib/utils";
 import { exportToCsv } from "@/lib/csv";
 import { useToast } from "@/lib/toast";
@@ -238,6 +239,11 @@ export default function SuppliersPage() {
             <Button
               disabled={!name.trim() || !contactPerson.trim()}
               onClick={async () => {
+                const trimmedPhone = phone.trim();
+                if (trimmedPhone && !isValidPakistaniPhone(trimmedPhone)) {
+                  toast({ type: "warning", title: "Invalid phone number", description: "Enter a valid Pakistani number, e.g. 03001234567 or +92 21 3453 0001." });
+                  return;
+                }
                 try {
                   await saveRecord("suppliers", {
                     id: editTarget?.id ?? crypto.randomUUID(),
@@ -266,7 +272,16 @@ export default function SuppliersPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Supplier Name" required disabled={!!editTarget && PURCHASES.some((purchase) => purchase.supplier === editTarget.name)} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. United Distributors" />
           <Input label="Contact Person" required value={contactPerson} onChange={(event) => setContactPerson(event.target.value)} placeholder="e.g. Sana Riaz" />
-          <Input label="Phone" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+92 ..." />
+          <Input
+            label="Phone"
+            type="tel"
+            inputMode="tel"
+            maxLength={16}
+            value={phone}
+            onChange={(event) => setPhone(sanitizePhoneInput(event.target.value))}
+            placeholder="03001234567 or +92 ..."
+            hint="Pakistani number only"
+          />
           <Input label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="orders@example.pk" />
           <div className="sm:col-span-2">
             <Textarea label="Address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Street, area, city" rows={2} />
