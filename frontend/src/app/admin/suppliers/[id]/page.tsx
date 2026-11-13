@@ -32,6 +32,7 @@ import { EmptyState } from "@/components/ui/States";
 import { SUPPLIERS, PURCHASES, PAYMENTS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { isValidPakistaniPhone, sanitizePhoneInput } from "@/lib/phone";
+import { isValidEmail } from "@/lib/validators";
 import { formatRs, formatDate, initials } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { Purchase, Payment, PaymentMethod } from "@/lib/types";
@@ -108,6 +109,11 @@ export default function SupplierDetailPage() {
     const trimmedPhone = phone.trim();
     if (trimmedPhone && !isValidPakistaniPhone(trimmedPhone)) {
       toast({ type: "warning", title: "Invalid phone number", description: "Enter a valid Pakistani number, e.g. 03001234567 or +92 21 3453 0001." });
+      return;
+    }
+    const trimmedEmail = email.trim();
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
+      toast({ type: "warning", title: "Invalid email", description: "Enter a valid email address, e.g. orders@supplier.pk." });
       return;
     }
     setSavingEdit(true);

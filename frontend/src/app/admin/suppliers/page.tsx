@@ -19,6 +19,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { PURCHASES, SUPPLIERS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { isValidPakistaniPhone, sanitizePhoneInput } from "@/lib/phone";
+import { isValidEmail } from "@/lib/validators";
 import { formatRs, paginate } from "@/lib/utils";
 import { exportToCsv } from "@/lib/csv";
 import { useToast } from "@/lib/toast";
@@ -242,6 +243,11 @@ export default function SuppliersPage() {
                 const trimmedPhone = phone.trim();
                 if (trimmedPhone && !isValidPakistaniPhone(trimmedPhone)) {
                   toast({ type: "warning", title: "Invalid phone number", description: "Enter a valid Pakistani number, e.g. 03001234567 or +92 21 3453 0001." });
+                  return;
+                }
+                const trimmedEmail = email.trim();
+                if (trimmedEmail && !isValidEmail(trimmedEmail)) {
+                  toast({ type: "warning", title: "Invalid email", description: "Enter a valid email address, e.g. orders@supplier.pk." });
                   return;
                 }
                 try {
