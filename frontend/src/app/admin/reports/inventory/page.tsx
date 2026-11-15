@@ -16,6 +16,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { MEDICINES, CATEGORIES, INVENTORY_BREAKDOWN, KPI } from "@/lib/data";
 import { formatRs, paginate } from "@/lib/utils";
+import { describeStock, isMultiUnit } from "@/lib/units";
 import { exportToCsv } from "@/lib/csv";
 import { useToast } from "@/lib/toast";
 import type { Medicine } from "@/lib/types";
@@ -67,12 +68,17 @@ export default function InventoryReportPage() {
       header: "Stock",
       align: "center",
       render: (m) => (
-        <span className={m.stock <= m.reorderLevel ? "font-semibold text-warning-600" : "font-medium text-navy-800"}>
-          {m.stock}
+        <span className="inline-flex flex-col items-center">
+          <span className={m.stock <= m.reorderLevel ? "font-semibold text-warning-600" : "font-medium text-navy-800"}>
+            {m.stock} {m.unit}
+          </span>
+          {isMultiUnit(m) && m.stock > 0 ? (
+            <span className="text-[11px] text-navy-400">{describeStock(m.stock, m)}</span>
+          ) : null}
         </span>
       ),
     },
-    { key: "reorderLevel", header: "Reorder", align: "center", hideOnMobile: true, render: (m) => <span className="text-navy-500">{m.reorderLevel}</span> },
+    { key: "reorderLevel", header: "Reorder", align: "center", hideOnMobile: true, render: (m) => <span className="text-navy-500">{m.reorderLevel} {m.unit}</span> },
     { key: "sellingPrice", header: "Price", align: "right", render: (m) => <span className="font-semibold text-navy-900">{formatRs(m.sellingPrice)}</span> },
     { key: "status", header: "Status", render: (m) => <StatusBadge status={m.status} /> },
   ];
@@ -91,6 +97,7 @@ export default function InventoryReportPage() {
               { header: "Category", value: (m) => m.category },
               { header: "SKU", value: (m) => m.sku },
               { header: "Stock", value: (m) => m.stock },
+              { header: "Packaging", value: (m) => describeStock(m.stock, m) },
               { header: "Reorder Level", value: (m) => m.reorderLevel },
               { header: "Selling Price", value: (m) => m.sellingPrice },
               { header: "Stock Value", value: (m) => m.sellingPrice * m.stock },

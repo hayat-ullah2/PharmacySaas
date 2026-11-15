@@ -129,7 +129,12 @@ export default function ManagerSaleDetailPage() {
                   {sale.items.map((item, i) => (
                     <tr key={`${item.medicineName}-${i}`}>
                       <td className="py-2.5 pr-2 font-medium text-navy-800">{item.medicineName}</td>
-                      <td className="py-2.5 text-center text-navy-600">{item.quantity}</td>
+                      <td className="py-2.5 text-center text-navy-600">
+                        {item.quantity}{item.unit ? ` ${item.unit}` : ""}
+                        {(item.factor ?? 1) > 1 ? (
+                          <span className="block text-[10px] text-navy-400">= {item.baseQuantity ?? item.quantity * (item.factor ?? 1)} base</span>
+                        ) : null}
+                      </td>
                       <td className="py-2.5 text-right text-navy-600">{formatRs(item.price)}</td>
                       <td className="py-2.5 text-right font-medium text-navy-900">{formatRs(item.subtotal)}</td>
                     </tr>
