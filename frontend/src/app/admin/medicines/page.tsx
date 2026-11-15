@@ -64,9 +64,14 @@ export default function MedicinesPage() {
       header: "Medicine",
       render: (m) => (
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
-            <Pill className="h-4 w-4" />
-          </span>
+          {m.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={m.image} alt={m.name} className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+          ) : (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+              <Pill className="h-4 w-4" />
+            </span>
+          )}
           <div className="min-w-0">
             <p className="font-medium text-navy-900">{m.name}</p>
             <p className="text-xs text-navy-400">{m.sku}</p>
