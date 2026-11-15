@@ -195,7 +195,6 @@ export default function MedicinesPage() {
         <DataTable
           columns={columns}
           rows={paged}
-          onRowClick={(m) => router.push(`/admin/medicines/${m.id}`)}
           empty={
             <EmptyState
               icon={<Pill className="h-6 w-6" />}
