@@ -201,7 +201,7 @@ export default function CreatePurchaseOrderPage() {
                         value={it.medicineId}
                         onChange={(e) => onSelectMedicine(it.id, e.target.value)}
                         placeholder="Select medicine"
-                        options={[...MEDICINES].map((m) => ({ value: m.id, label: `${m.name} ${m.strength}` }))}
+                        options={[...MEDICINES].filter((m) => !m.archived).map((m) => ({ value: m.id, label: `${m.name} ${m.strength}` }))}
                       />
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                         <Select

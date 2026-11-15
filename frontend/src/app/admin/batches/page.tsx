@@ -316,7 +316,7 @@ export default function BatchesPage() {
               setForm((f) => ({ ...f, medicineId: e.target.value, unit: med?.unit ?? "" }));
             }}
             placeholder="Select a medicine"
-            options={[...MEDICINES].map((m) => ({ value: m.id, label: `${m.name} ${m.strength}` }))}
+            options={[...MEDICINES].filter((m) => !m.archived).map((m) => ({ value: m.id, label: `${m.name} ${m.strength}` }))}
           />
           <Select
             label="Supplier (optional)"

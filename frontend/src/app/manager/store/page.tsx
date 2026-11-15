@@ -20,6 +20,7 @@ export default function ManagerStorePage() {
 
   const products = useMemo(() => {
     let list = MEDICINES.filter((m) => {
+      if (m.archived) return false; // archived medicines are not sellable
       const q = search.toLowerCase();
       const matchSearch = !q || m.name.toLowerCase().includes(q) || m.genericName.toLowerCase().includes(q);
       const matchCat = category === "All" || m.category === category;

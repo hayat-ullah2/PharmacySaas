@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Download, Eye, Pencil, Trash2, Pill } from "lucide-react";
+import { Plus, Download, Eye, Pencil, Trash2, Pill, Archive, ArchiveRestore } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -29,7 +29,7 @@ const PER_PAGE = 8;
 export default function MedicinesPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { deleteRecord } = usePharmacyData();
+  const { deleteRecord, saveRecord } = usePharmacyData();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
@@ -38,6 +38,18 @@ export default function MedicinesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Medicine | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [editTarget, setEditTarget] = useState<Medicine | null>(null);
+
+  // Archive = hide a discontinued medicine from the catalog without deleting it.
+  const toggleArchive = async (m: Medicine) => {
+    try {
+      await saveRecord("medicines", { ...m, archived: !m.archived });
+      toast({ type: "success", title: m.archived ? "Medicine restored" : "Medicine archived", description: `${m.name} ${m.archived ? "is back in the catalog." : "was archived — hidden from selling & reordering."}` });
+    } catch (archiveError) {
+      toast({ type: "danger", title: "Unable to update medicine", description: archiveError instanceof Error ? archiveError.message : "Please try again." });
+    }
+  };
+
+  const showingArchived = status === "archived";
 
   const filtered = useMemo(() => {
     return MEDICINES.filter((m) => {
@@ -49,10 +61,13 @@ export default function MedicinesPage() {
         m.sku.toLowerCase().includes(q);
       const matchCat = !category || m.category === category;
       const matchBrand = !brand || m.brand === brand;
+      // "Archived" filter shows only archived; every other view hides them.
+      if (showingArchived) return matchSearch && matchCat && matchBrand && m.archived === true;
+      if (m.archived) return false;
       const matchStatus = !status || m.status === status;
       return matchSearch && matchCat && matchBrand && matchStatus;
     });
-  }, [search, category, brand, status]);
+  }, [search, category, brand, status, showingArchived]);
 
   const paged = paginate(filtered, page, PER_PAGE);
 
@@ -73,7 +88,10 @@ export default function MedicinesPage() {
             </span>
           )}
           <div className="min-w-0">
-            <p className="font-medium text-navy-900">{m.name}</p>
+            <p className="flex items-center gap-1.5 font-medium text-navy-900">
+              {m.name}
+              {m.archived ? <Badge tone="navy">Archived</Badge> : null}
+            </p>
             <p className="text-xs text-navy-400">{m.sku}</p>
           </div>
         </div>
@@ -115,6 +133,9 @@ export default function MedicinesPage() {
           items={[
             { label: "View", icon: <Eye className="h-4 w-4" />, onClick: () => router.push(`/admin/medicines/${m.id}`) },
             { label: "Edit", icon: <Pencil className="h-4 w-4" />, onClick: () => setEditTarget({ ...m }) },
+            m.archived
+              ? { label: "Restore", icon: <ArchiveRestore className="h-4 w-4" />, onClick: () => toggleArchive(m) }
+              : { label: "Archive", icon: <Archive className="h-4 w-4" />, onClick: () => toggleArchive(m) },
             { label: "", divider: true },
             { label: "Delete", icon: <Trash2 className="h-4 w-4" />, danger: true, onClick: () => setDeleteTarget(m) },
           ]}
@@ -192,6 +213,7 @@ export default function MedicinesPage() {
                 { value: "low", label: "Low Stock" },
                 { value: "expiring", label: "Expiring" },
                 { value: "out", label: "Out of Stock" },
+                { value: "archived", label: "Archived" },
               ]}
             />
           </div>

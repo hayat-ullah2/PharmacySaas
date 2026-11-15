@@ -43,7 +43,7 @@ export function deriveAlerts(): AlertItem[] {
 
   // 2) Out-of-stock + low-stock medicines (out first, then deepest below reorder).
   const low = meds
-    .filter((m) => m.status === "out" || m.status === "low")
+    .filter((m) => !m.archived && (m.status === "out" || m.status === "low"))
     .sort((a, b) => {
       if ((a.status === "out") !== (b.status === "out")) return a.status === "out" ? -1 : 1;
       return a.stock - a.reorderLevel - (b.stock - b.reorderLevel);

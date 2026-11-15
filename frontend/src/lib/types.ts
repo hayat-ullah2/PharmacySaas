@@ -27,6 +27,8 @@ export interface Medicine {
   /** The strength's unit on its own, e.g. "mg" / "ml". Kept separate from `unit`. */
   strengthUnit?: string;
   unit: string;
+  /** Archived = hidden from selling/reordering but kept for history. */
+  archived?: boolean;
   sellingPrice: number;
   purchasePrice: number;
   reorderLevel: number;
