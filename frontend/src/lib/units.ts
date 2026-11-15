@@ -40,6 +40,12 @@ export function isMultiUnit(m: UnitSource): boolean {
   return (m.packUnits ?? []).some((u) => u && u.factor > 1);
 }
 
+/** Units you can buy in — every pack plus the base unit (loose buying always allowed). */
+export function purchasableUnits(m: Pick<Medicine, "unit" | "purchasePrice" | "packUnits">): MedicineUnit[] {
+  const packs = (m.packUnits ?? []).filter((u) => u && u.factor > 1).sort((a, b) => b.factor - a.factor);
+  return [...packs, { name: m.unit || "Unit", factor: 1, price: m.purchasePrice }];
+}
+
 /**
  * Human-readable packaging breakdown of a base-unit quantity, largest pack first.
  * e.g. 487 tablets with Box(100)+Strip(10) → "4 Box + 8 Strip + 7 Tablet".

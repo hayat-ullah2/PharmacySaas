@@ -61,7 +61,12 @@ export default function PurchaseDetailPage() {
   const columns: Column<PurchaseRow>[] = [
     { key: "medicineName", header: "Medicine", render: (r) => <span className="font-medium text-navy-900">{r.medicineName}</span> },
     { key: "batch", header: "Batch", hideOnMobile: true, render: (r) => <span className="text-navy-600">{r.batch}</span> },
-    { key: "quantity", header: "Qty", align: "center", render: (r) => <span className="text-navy-700">{r.quantity}</span> },
+    { key: "quantity", header: "Qty", align: "center", render: (r) => (
+      <span className="text-navy-700">
+        {r.quantity}{r.unit ? ` ${r.unit}` : ""}
+        {(r.factor ?? 1) > 1 ? <span className="block text-xs text-navy-400">= {r.quantity * (r.factor ?? 1)} base</span> : null}
+      </span>
+    ) },
     { key: "purchasePrice", header: "Unit Price", align: "right", render: (r) => <span className="text-navy-600">{formatRs(r.purchasePrice)}</span> },
     { key: "lineTotal", header: "Line Total", align: "right", render: (r) => <span className="font-semibold text-navy-900">{formatRs(r.quantity * r.purchasePrice)}</span> },
     { key: "expiryDate", header: "Expiry", align: "right", hideOnMobile: true, render: (r) => <span className="text-navy-500">{formatDate(r.expiryDate)}</span> },

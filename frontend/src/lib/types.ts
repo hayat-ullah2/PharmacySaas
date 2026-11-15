@@ -103,6 +103,10 @@ export type PurchaseStatus =
 export interface PurchaseItem {
   medicineId?: string;
   medicineName: string;
+  /** Purchase unit (e.g. "Box"); absent on legacy orders means base units. */
+  unit?: string;
+  /** Base units per purchase unit; absent means 1. */
+  factor?: number;
   batch: string;
   quantity: number;
   purchasePrice: number;

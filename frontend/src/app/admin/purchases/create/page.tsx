@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { SUPPLIERS, MEDICINES } from "@/lib/data";
+import { purchasableUnits } from "@/lib/units";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
@@ -17,6 +18,8 @@ interface LineItem {
   id: string;
   medicineId: string;
   medicineName: string;
+  unit: string;
+  factor: number;
   batch: string;
   quantity: number;
   purchasePrice: number;
@@ -28,6 +31,8 @@ const newLine = (): LineItem => ({
   id: `line-${++counter}`,
   medicineId: "",
   medicineName: "",
+  unit: "",
+  factor: 1,
   batch: "",
   quantity: 1,
   purchasePrice: 0,
@@ -62,6 +67,8 @@ export default function CreatePurchaseOrderPage() {
     updateItem(id, {
       medicineId,
       medicineName: med ? `${med.name} ${med.strength}` : "",
+      unit: med?.unit ?? "",
+      factor: 1,
       purchasePrice: med ? med.purchasePrice : 0,
     });
   };
@@ -104,6 +111,8 @@ export default function CreatePurchaseOrderPage() {
         items: validItems.map((it) => ({
           medicineId: it.medicineId,
           medicineName: it.medicineName,
+          unit: it.unit,
+          factor: it.factor,
           batch: it.batch.trim(),
           quantity: it.quantity,
           purchasePrice: it.purchasePrice,
@@ -166,6 +175,10 @@ export default function CreatePurchaseOrderPage() {
             <CardBody className="space-y-4">
               {items.map((it, idx) => {
                 const lineTotal = it.quantity * it.purchasePrice;
+                const med = [...MEDICINES].find((m) => m.id === it.medicineId);
+                const unitOptions = med ? purchasableUnits(med) : [];
+                const baseUnitName = med?.unit ?? "unit";
+                const baseQty = it.quantity * (it.factor || 1);
                 return (
                   <div key={it.id} className="rounded-xl border border-navy-100 p-3">
                     <div className="mb-2 flex items-center justify-between">
@@ -190,7 +203,26 @@ export default function CreatePurchaseOrderPage() {
                         placeholder="Select medicine"
                         options={[...MEDICINES].map((m) => ({ value: m.id, label: `${m.name} ${m.strength}` }))}
                       />
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                        <Select
+                          label="Unit"
+                          value={it.unit}
+                          onChange={(e) => {
+                            const u = unitOptions.find((x) => x.name === e.target.value);
+                            const f = u?.factor ?? 1;
+                            updateItem(it.id, {
+                              unit: e.target.value,
+                              factor: f,
+                              purchasePrice: med ? Math.round(med.purchasePrice * f * 100) / 100 : it.purchasePrice,
+                            });
+                          }}
+                          placeholder="Unit"
+                          disabled={!med}
+                          options={unitOptions.map((u) => ({
+                            value: u.name,
+                            label: u.factor > 1 ? `${u.name} (${u.factor} ${baseUnitName})` : u.name,
+                          }))}
+                        />
                         <Input
                           label="Batch"
                           placeholder="e.g. PAN-2026-09"
@@ -205,7 +237,7 @@ export default function CreatePurchaseOrderPage() {
                           onChange={(e) => updateItem(it.id, { quantity: Math.max(0, parseInt(e.target.value) || 0) })}
                         />
                         <Input
-                          label="Purchase Price"
+                          label={`Cost / ${it.unit || baseUnitName}`}
                           type="number"
                           min={0}
                           value={it.purchasePrice}
@@ -219,9 +251,14 @@ export default function CreatePurchaseOrderPage() {
                         />
                       </div>
                     </div>
-                    <div className="mt-2 flex justify-end text-sm">
-                      <span className="text-navy-500">Line subtotal:&nbsp;</span>
-                      <span className="font-semibold text-navy-900">{formatRs(lineTotal)}</span>
+                    <div className="mt-2 flex items-center justify-between text-sm">
+                      <span className="text-xs text-navy-400">
+                        {it.factor > 1 ? `Adds ${baseQty} ${baseUnitName} to stock` : ""}
+                      </span>
+                      <span>
+                        <span className="text-navy-500">Line subtotal:&nbsp;</span>
+                        <span className="font-semibold text-navy-900">{formatRs(lineTotal)}</span>
+                      </span>
                     </div>
                   </div>
                 );
