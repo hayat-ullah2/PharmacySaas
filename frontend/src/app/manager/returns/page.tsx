@@ -173,7 +173,7 @@ export default function ManagerReturnsPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-navy-800">{it.medicineName}</p>
                         <p className="text-xs text-navy-400">
-                          Sold {it.quantity}{already > 0 ? ` · ${already} returned` : ""} · {formatRs(it.price)} each
+                          Sold {it.quantity}{it.unit ? ` ${it.unit}` : ""}{already > 0 ? ` · ${already} returned` : ""} · {formatRs(it.price)} each
                         </p>
                       </div>
                       {mid && returnable > 0 ? (

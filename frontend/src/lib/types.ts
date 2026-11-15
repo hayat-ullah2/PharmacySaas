@@ -138,6 +138,12 @@ export interface MedicineUnit {
 export interface SaleItem {
   medicineId?: string;
   medicineName: string;
+  /** Unit this line was sold in (e.g. "Box"); absent on legacy sales = base unit. */
+  unit?: string;
+  /** Base units per sold unit; absent means 1. */
+  factor?: number;
+  /** quantity * factor = base units moved. */
+  baseQuantity?: number;
   quantity: number;
   price: number;
   subtotal: number;

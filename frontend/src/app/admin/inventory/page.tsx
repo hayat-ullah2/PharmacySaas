@@ -28,6 +28,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { MEDICINES, BATCHES, KPI } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate, formatNumber, paginate } from "@/lib/utils";
+import { describeStock, isMultiUnit } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import type { Medicine } from "@/lib/types";
 
@@ -127,8 +128,13 @@ export default function InventoryPage() {
       header: "Available",
       align: "center",
       render: (m) => (
-        <span className={m.stock <= m.reorderLevel ? "font-semibold text-warning-600" : "font-medium text-navy-800"}>
-          {m.stock}
+        <span className="inline-flex flex-col items-center">
+          <span className={m.stock <= m.reorderLevel ? "font-semibold text-warning-600" : "font-medium text-navy-800"}>
+            {m.stock} {m.unit}
+          </span>
+          {isMultiUnit(m) && m.stock > 0 ? (
+            <span className="text-[11px] text-navy-400">{describeStock(m.stock, m)}</span>
+          ) : null}
         </span>
       ),
     },
@@ -144,7 +150,7 @@ export default function InventoryPage() {
       header: "Reorder Level",
       align: "center",
       hideOnMobile: true,
-      render: (m) => <span className="text-navy-500">{m.reorderLevel}</span>,
+      render: (m) => <span className="text-navy-500">{m.reorderLevel} {m.unit}</span>,
     },
     {
       key: "expiry",

@@ -40,6 +40,24 @@ export function isMultiUnit(m: UnitSource): boolean {
   return (m.packUnits ?? []).some((u) => u && u.factor > 1);
 }
 
+/** Readable packaging breakdown of a base-unit quantity, e.g. 503 → "5 Box + 3 Tablet". */
+export function describeStock(baseQty: number, m: Pick<Medicine, "unit" | "packUnits">): string {
+  const base = m.unit || "unit";
+  const packs = (m.packUnits ?? []).filter((u) => u && u.factor > 1).sort((a, b) => b.factor - a.factor);
+  if (packs.length === 0 || baseQty <= 0) return `${baseQty} ${base}`;
+  let rem = baseQty;
+  const parts: string[] = [];
+  for (const p of packs) {
+    const n = Math.floor(rem / p.factor);
+    if (n > 0) {
+      parts.push(`${n} ${p.name}`);
+      rem -= n * p.factor;
+    }
+  }
+  if (rem > 0 || parts.length === 0) parts.push(`${rem} ${base}`);
+  return parts.join(" + ");
+}
+
 /** Units you can buy in — every pack plus the base unit (loose buying always allowed). */
 export function purchasableUnits(m: Pick<Medicine, "unit" | "purchasePrice" | "packUnits">): MedicineUnit[] {
   const packs = (m.packUnits ?? []).filter((u) => u && u.factor > 1).sort((a, b) => b.factor - a.factor);
