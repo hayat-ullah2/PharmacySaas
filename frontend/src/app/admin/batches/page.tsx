@@ -21,7 +21,8 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { BATCHES, MEDICINES } from "@/lib/data";
+import { BATCHES, MEDICINES, SUPPLIERS } from "@/lib/data";
+import { purchasableUnits } from "@/lib/units";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate, paginate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
@@ -29,7 +30,7 @@ import type { Batch } from "@/lib/types";
 
 const PER_PAGE = 8;
 
-const emptyForm = { medicineId: "", batchNumber: "", quantity: "", expiryDate: "", purchasePrice: "", sellingPrice: "" };
+const emptyForm = { medicineId: "", batchNumber: "", supplier: "", unit: "", quantity: "", expiryDate: "", purchasePrice: "", sellingPrice: "" };
 
 export default function BatchesPage() {
   const { toast } = useToast();
@@ -40,6 +41,13 @@ export default function BatchesPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+
+  // Packaging context for the selected medicine, to convert the chosen purchase
+  // unit into base units (e.g. 5 Box -> 500 Tablet).
+  const selectedMed = useMemo(() => [...MEDICINES].find((m) => m.id === form.medicineId), [form.medicineId]);
+  const batchUnits = selectedMed ? purchasableUnits(selectedMed) : [];
+  const batchBaseUnit = selectedMed?.unit ?? "unit";
+  const batchFactor = batchUnits.find((u) => u.name === form.unit)?.factor ?? 1;
 
   const submitBatch = async () => {
     const quantity = Number(form.quantity);
@@ -60,12 +68,14 @@ export default function BatchesPage() {
       await addBatch({
         medicineId: form.medicineId,
         batchNumber: form.batchNumber.trim(),
+        supplier: form.supplier || undefined,
+        unit: form.unit || undefined,
         quantity,
         expiryDate: form.expiryDate,
         purchasePrice: form.purchasePrice ? Number(form.purchasePrice) : undefined,
         sellingPrice: form.sellingPrice ? Number(form.sellingPrice) : undefined,
       });
-      toast({ type: "success", title: "Batch added", description: `${quantity} unit(s) added to stock.` });
+      toast({ type: "success", title: "Batch added", description: `${quantity} ${form.unit || "unit"}(s) added — ${quantity * batchFactor} ${batchBaseUnit} in stock.` });
       setAddOpen(false);
       setForm(emptyForm);
     } catch (saveError) {
@@ -108,7 +118,10 @@ export default function BatchesPage() {
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
             <Layers className="h-4 w-4" />
           </span>
-          <span className="font-medium text-navy-900">{b.medicineName}</span>
+          <div className="min-w-0">
+            <span className="font-medium text-navy-900">{b.medicineName}</span>
+            {b.supplier ? <span className="block text-[10px] text-navy-400">{b.supplier}</span> : null}
+          </div>
         </div>
       ),
     },
@@ -159,7 +172,14 @@ export default function BatchesPage() {
       header: "Qty",
       align: "center",
       hideOnMobile: true,
-      render: (b) => <span className="text-navy-600">{b.quantity}</span>,
+      render: (b) => (
+        <span className="text-navy-600">
+          {b.quantity}
+          {b.purchaseUnit && b.purchaseQty && b.purchaseQty !== b.quantity ? (
+            <span className="block text-[10px] text-navy-400">{b.purchaseQty} {b.purchaseUnit}</span>
+          ) : null}
+        </span>
+      ),
     },
     {
       key: "remaining",
@@ -291,18 +311,43 @@ export default function BatchesPage() {
           <Select
             label="Medicine"
             value={form.medicineId}
-            onChange={(e) => setForm((f) => ({ ...f, medicineId: e.target.value }))}
+            onChange={(e) => {
+              const med = [...MEDICINES].find((m) => m.id === e.target.value);
+              setForm((f) => ({ ...f, medicineId: e.target.value, unit: med?.unit ?? "" }));
+            }}
             placeholder="Select a medicine"
             options={[...MEDICINES].map((m) => ({ value: m.id, label: `${m.name} ${m.strength}` }))}
           />
+          <Select
+            label="Supplier (optional)"
+            value={form.supplier}
+            onChange={(e) => setForm((f) => ({ ...f, supplier: e.target.value }))}
+            placeholder="Select supplier"
+            options={SUPPLIERS.map((s) => ({ value: s.name, label: s.name }))}
+          />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Quantity" type="number" min={1} placeholder="e.g. 100" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} />
-            <Input label="Expiry date" type="date" value={form.expiryDate} onChange={(e) => setForm((f) => ({ ...f, expiryDate: e.target.value }))} />
+            <Select
+              label="Purchase Unit"
+              value={form.unit}
+              onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
+              placeholder="Unit"
+              disabled={!selectedMed}
+              options={batchUnits.map((u) => ({ value: u.name, label: u.factor > 1 ? `${u.name} (${u.factor} ${batchBaseUnit})` : u.name }))}
+            />
+            <Input label={`Quantity (${form.unit || batchBaseUnit})`} type="number" min={1} placeholder="e.g. 5" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} />
           </div>
-          <Input label="Batch number (optional)" placeholder="Auto-generated if blank" value={form.batchNumber} onChange={(e) => setForm((f) => ({ ...f, batchNumber: e.target.value }))} />
+          {batchFactor > 1 && Number(form.quantity) > 0 ? (
+            <p className="-mt-2 text-xs text-primary-600">
+              Adds <span className="font-semibold">{Number(form.quantity) * batchFactor} {batchBaseUnit}</span> to stock.
+            </p>
+          ) : null}
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Purchase price (optional)" type="number" min={0} step="0.01" placeholder="Medicine default" value={form.purchasePrice} onChange={(e) => setForm((f) => ({ ...f, purchasePrice: e.target.value }))} />
-            <Input label="Selling price (optional)" type="number" min={0} step="0.01" placeholder="Medicine default" value={form.sellingPrice} onChange={(e) => setForm((f) => ({ ...f, sellingPrice: e.target.value }))} />
+            <Input label="Expiry date" type="date" value={form.expiryDate} onChange={(e) => setForm((f) => ({ ...f, expiryDate: e.target.value }))} />
+            <Input label="Batch number (optional)" placeholder="Auto if blank" value={form.batchNumber} onChange={(e) => setForm((f) => ({ ...f, batchNumber: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label={`Purchase price / ${form.unit || batchBaseUnit}`} type="number" min={0} step="0.01" placeholder="Medicine default" value={form.purchasePrice} onChange={(e) => setForm((f) => ({ ...f, purchasePrice: e.target.value }))} />
+            <Input label={`Selling price / ${batchBaseUnit}`} type="number" min={0} step="0.01" placeholder="Medicine default" value={form.sellingPrice} onChange={(e) => setForm((f) => ({ ...f, sellingPrice: e.target.value }))} />
           </div>
         </div>
       </Modal>

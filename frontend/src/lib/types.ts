@@ -73,6 +73,12 @@ export interface Batch {
   medicineId: string;
   medicineName: string;
   batchNumber: string;
+  /** Supplier this batch was bought from (optional). */
+  supplier?: string;
+  /** Purchase unit the batch was entered in, e.g. "Box"; base unit if absent. */
+  purchaseUnit?: string;
+  /** Quantity in the purchase unit (purchaseQty * factor = quantity base units). */
+  purchaseQty?: number;
   purchaseDate: string;
   expiryDate: string;
   purchasePrice: number;
