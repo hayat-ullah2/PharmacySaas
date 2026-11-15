@@ -9,12 +9,15 @@ export interface SelectProps
   label?: string;
   options: { value: string; label: string }[];
   placeholder?: string;
+  /** Small helper text shown under the control. */
+  hint?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, options, placeholder, id, ...props }, ref) => {
+  ({ className, label, options, placeholder, hint, id, ...props }, ref) => {
     const autoId = useId();
     const selectId = id || autoId;
+    const hintId = hint ? `${selectId}-hint` : undefined;
     return (
       <div className="w-full">
         {label && (
@@ -29,6 +32,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <select
             ref={ref}
             id={selectId}
+            aria-describedby={hintId}
             className={cn(
               "h-10 w-full appearance-none rounded-lg border border-navy-200 bg-white pl-3 pr-9 text-sm text-navy-900 transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-navy-50",
               className,
@@ -44,6 +48,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400" />
         </div>
+        {hint && (
+          <p id={hintId} className="mt-1 text-xs text-navy-400">
+            {hint}
+          </p>
+        )}
       </div>
     );
   },

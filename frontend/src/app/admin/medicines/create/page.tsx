@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
+import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
 import { CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
 import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
 import { validatePackUnits } from "@/lib/units";
@@ -128,10 +129,13 @@ export default function CreateMedicinePage() {
 
           <Card>
             <CardHeader title="Formulation" subtitle="Dosage form and strength" />
-            <CardBody className="grid gap-4 sm:grid-cols-3">
-              <Select name="dosageForm" label="Dosage Form" placeholder="Select form" options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
-              <Input name="strength" label="Strength" placeholder="e.g. 500mg" />
-              <Select name="unit" label="Unit" placeholder="Select unit" options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
+            <CardBody className="space-y-4">
+              <DosageVsUnitHint />
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Select name="dosageForm" label="Dosage Form" placeholder="Select form" hint="The physical form — what the medicine is (e.g. Tablet, Syrup)." options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
+                <Input name="strength" label="Strength" placeholder="e.g. 500mg" />
+                <Select name="unit" label="Unit" placeholder="Select unit" hint="The smallest piece you stock & sell — build Box/Strip in Packaging below." options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
+              </div>
             </CardBody>
           </Card>
 
