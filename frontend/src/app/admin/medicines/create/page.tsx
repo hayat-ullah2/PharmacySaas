@@ -14,7 +14,7 @@ import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
 import { CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
-import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
+import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, combineStrength } from "@/lib/medicineOptions";
 import { validatePackUnits } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { usePharmacyData } from "@/lib/pharmacyData";
@@ -73,7 +73,8 @@ export default function CreateMedicinePage() {
         brand: String(values.get("brand") ?? ""),
         manufacturer: String(values.get("manufacturer") ?? ""),
         dosageForm: String(values.get("dosageForm") ?? ""),
-        strength: String(values.get("strength") ?? ""),
+        strength: combineStrength(String(values.get("strengthValue") ?? ""), String(values.get("strengthUnit") ?? "")),
+        strengthUnit: String(values.get("strengthUnit") ?? "") || undefined,
         unit: String(values.get("unit") ?? ""),
         sellingPrice,
         purchasePrice,
@@ -131,9 +132,10 @@ export default function CreateMedicinePage() {
             <CardHeader title="Formulation" subtitle="Dosage form and strength" />
             <CardBody className="space-y-4">
               <DosageVsUnitHint />
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Select name="dosageForm" label="Dosage Form" placeholder="Select form" hint="The physical form — what the medicine is (e.g. Tablet, Syrup)." options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
-                <Input name="strength" label="Strength" placeholder="e.g. 500mg" />
+                <Input name="strengthValue" label="Strength" placeholder="e.g. 500" inputMode="decimal" />
+                <Select name="strengthUnit" label="Strength Unit" placeholder="mg / ml" hint="The dose unit (mg, ml) — not the packaging." options={STRENGTH_UNITS.map((u) => ({ value: u, label: u }))} />
                 <Select name="unit" label="Unit" placeholder="Select unit" hint="The smallest piece you stock & sell — build Box/Strip in Packaging below." options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
               </div>
             </CardBody>

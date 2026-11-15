@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { MEDICINES, CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
-import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS } from "@/lib/medicineOptions";
+import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, splitStrength, combineStrength } from "@/lib/medicineOptions";
 import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
 import { validatePackUnits } from "@/lib/units";
 import { usePharmacyData } from "@/lib/pharmacyData";
@@ -35,13 +35,27 @@ export function MedicineEditModal({
   const { saveRecord } = usePharmacyData();
   const { toast } = useToast();
   const [form, setForm] = useState<Medicine>({ ...medicine });
+  const initStrength = splitStrength(medicine.strength, medicine.strengthUnit);
+  const [strengthValue, setStrengthValue] = useState(initStrength.value);
+  const [strengthUnit, setStrengthUnit] = useState(initStrength.unit);
   const [saving, setSaving] = useState(false);
 
   const upd = (patch: Partial<Medicine>) => setForm((cur) => ({ ...cur, ...patch }));
 
+  // Keep any unusual stored unit selectable even if it isn't in the preset list.
+  const strengthUnitOptions = (strengthUnit && !STRENGTH_UNITS.includes(strengthUnit)
+    ? [strengthUnit, ...STRENGTH_UNITS]
+    : STRENGTH_UNITS
+  ).map((u) => ({ value: u, label: u }));
+  // Preserve a legacy packaging unit (e.g. "ml") that is no longer in the preset list.
+  const unitOptions = (form.unit && !UNITS.includes(form.unit)
+    ? [form.unit, ...UNITS]
+    : UNITS
+  ).map((u) => ({ value: u, label: u }));
+
   const save = async () => {
     const trimmedName = form.name.trim();
-    const strength = (form.strength ?? "").trim();
+    const strength = combineStrength(strengthValue, strengthUnit);
     if (trimmedName.length < 2) {
       toast({ type: "warning", title: "Name required", description: "Enter a medicine name (at least 2 characters)." });
       return;
@@ -79,6 +93,7 @@ export function MedicineEditModal({
         name: trimmedName,
         genericName: form.genericName.trim(),
         strength,
+        strengthUnit: strengthUnit || undefined,
         sku: (form.sku ?? "").trim(),
         description: (form.description ?? "").trim(),
         packUnits: packs.length ? packs : undefined,
@@ -117,8 +132,11 @@ export function MedicineEditModal({
           <Select label="Manufacturer" value={form.manufacturer} onChange={(e) => upd({ manufacturer: e.target.value })} placeholder="Select manufacturer" options={MANUFACTURERS.map((m) => ({ value: m.name, label: m.name }))} />
           <div className="sm:col-span-2"><DosageVsUnitHint /></div>
           <Select label="Dosage form" value={form.dosageForm} onChange={(e) => upd({ dosageForm: e.target.value })} placeholder="Select form" hint="The physical form — what the medicine is (e.g. Tablet, Syrup)." options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
-          <Input label="Strength" value={form.strength} onChange={(e) => upd({ strength: e.target.value })} />
-          <Select label="Unit" value={form.unit} onChange={(e) => upd({ unit: e.target.value })} placeholder="Select unit" hint="The smallest piece you stock & sell — build Box/Strip in Packaging." options={UNITS.map((u) => ({ value: u, label: u }))} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Strength" value={strengthValue} inputMode="decimal" placeholder="e.g. 500" onChange={(e) => setStrengthValue(e.target.value)} />
+            <Select label="Strength Unit" value={strengthUnit} onChange={(e) => setStrengthUnit(e.target.value)} placeholder="mg / ml" options={strengthUnitOptions} />
+          </div>
+          <Select label="Unit" value={form.unit} onChange={(e) => upd({ unit: e.target.value })} placeholder="Select unit" hint="The smallest piece you stock & sell — build Box/Strip in Packaging." options={unitOptions} />
           <Input label="Selling price (Rs)" type="number" min={0} step="0.01" value={form.sellingPrice} onChange={(e) => upd({ sellingPrice: Number(e.target.value) })} />
           <Input label="Purchase price (Rs)" type="number" min={0} step="0.01" value={form.purchasePrice} onChange={(e) => upd({ purchasePrice: Number(e.target.value) })} />
           <Input label="Reorder level" type="number" min={0} value={form.reorderLevel} onChange={(e) => upd({ reorderLevel: Number(e.target.value) })} />

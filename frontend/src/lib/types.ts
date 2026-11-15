@@ -22,7 +22,10 @@ export interface Medicine {
   brand: string;
   manufacturer: string;
   dosageForm: string;
+  /** Human-readable dose, e.g. "500mg" (value + strengthUnit combined). */
   strength: string;
+  /** The strength's unit on its own, e.g. "mg" / "ml". Kept separate from `unit`. */
+  strengthUnit?: string;
   unit: string;
   sellingPrice: number;
   purchasePrice: number;
