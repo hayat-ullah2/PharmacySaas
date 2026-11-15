@@ -163,6 +163,14 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
   const deleteRecord = useCallback(
     async (entity: string, id: string) => {
       if (!user) throw new Error("Sign in to update pharmacy data.");
+      // Deleting a medicine must also remove its batches + stock adjustments,
+      // otherwise they linger as orphans in Batch Management / Inventory.
+      if (entity === "medicines") {
+        const { error: rpcError } = await getSupabaseClient().rpc("delete_medicine", { p_medicine_id: id });
+        if (rpcError) throw rpcError;
+        await reload();
+        return;
+      }
       const { error: deleteError } = await getSupabaseClient()
         .from("pharmacy_records")
         .delete()
