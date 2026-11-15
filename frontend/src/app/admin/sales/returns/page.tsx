@@ -49,7 +49,7 @@ export default function SalesReturnsPage() {
     }
     // Admin return processes all remaining (not-yet-returned) items of the sale.
     const items = selectedSale.items
-      .map((it) => ({ medicineId: it.medicineId as string, quantity: it.quantity - (it.returnedQty ?? 0) }))
+      .map((it) => ({ medicineId: it.medicineId as string, unit: it.unit, quantity: it.quantity - (it.returnedQty ?? 0) }))
       .filter((it) => it.medicineId && it.quantity > 0);
     if (items.length === 0) {
       toast({ type: "warning", title: "Nothing to return", description: "This sale has no remaining returnable items." });

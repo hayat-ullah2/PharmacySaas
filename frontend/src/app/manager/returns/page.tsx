@@ -32,14 +32,18 @@ export default function ManagerReturnsPage() {
   const returnableSales = useMemo(() => [...SALES].filter((s) => s.status !== "refunded"), []);
   const selectedSale = useMemo(() => [...SALES].find((s) => s.id === saleId), [saleId]);
 
+  // A sale can hold several lines of the same medicine (Box, Strip, Tablet),
+  // so each line is keyed by medicine + unit, not medicine alone.
+  const lineKey = (it: { medicineId?: string; unit?: string }) => `${it.medicineId ?? ""}__${it.unit ?? ""}`;
+
   const selectSale = (id: string) => { setSaleId(id); setReturnQty({}); };
-  const setItemQty = (medicineId: string, max: number, value: number) =>
-    setReturnQty((cur) => ({ ...cur, [medicineId]: Math.max(0, Math.min(max, value)) }));
+  const setItemQty = (key: string, max: number, value: number) =>
+    setReturnQty((cur) => ({ ...cur, [key]: Math.max(0, Math.min(max, value)) }));
 
   // Refund is proportional to the sale total, so any discount is respected.
   const ratio = selectedSale && selectedSale.subtotal > 0 ? selectedSale.total / selectedSale.subtotal : 1;
   const refund = selectedSale
-    ? selectedSale.items.reduce((sum, it) => (it.medicineId ? sum + it.price * (returnQty[it.medicineId] ?? 0) * ratio : sum), 0)
+    ? selectedSale.items.reduce((sum, it) => (it.medicineId ? sum + it.price * (returnQty[lineKey(it)] ?? 0) * ratio : sum), 0)
     : 0;
   const totalReturnQty = Object.values(returnQty).reduce((a, b) => a + b, 0);
 
@@ -60,8 +64,8 @@ export default function ManagerReturnsPage() {
       return;
     }
     const items = selectedSale.items
-      .filter((it) => it.medicineId && (returnQty[it.medicineId] ?? 0) > 0)
-      .map((it) => ({ medicineId: it.medicineId as string, quantity: returnQty[it.medicineId as string] }));
+      .filter((it) => it.medicineId && (returnQty[lineKey(it)] ?? 0) > 0)
+      .map((it) => ({ medicineId: it.medicineId as string, unit: it.unit, quantity: returnQty[lineKey(it)] }));
     if (items.length === 0) {
       toast({ type: "warning", title: "Nothing selected", description: "Enter the quantity to return for at least one item." });
       return;
@@ -165,11 +169,12 @@ export default function ManagerReturnsPage() {
               <div className="space-y-2">
                 {selectedSale.items.map((it, idx) => {
                   const mid = it.medicineId;
+                  const key = lineKey(it);
                   const already = it.returnedQty ?? 0;
                   const returnable = it.quantity - already;
-                  const qty = mid ? (returnQty[mid] ?? 0) : 0;
+                  const qty = mid ? (returnQty[key] ?? 0) : 0;
                   return (
-                    <div key={mid ?? idx} className="flex items-center justify-between gap-3 rounded-lg border border-navy-100 p-2.5">
+                    <div key={mid ? key : idx} className="flex items-center justify-between gap-3 rounded-lg border border-navy-100 p-2.5">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-navy-800">{it.medicineName}</p>
                         <p className="text-xs text-navy-400">
@@ -178,11 +183,11 @@ export default function ManagerReturnsPage() {
                       </div>
                       {mid && returnable > 0 ? (
                         <div className="flex shrink-0 items-center rounded-lg border border-navy-200">
-                          <button type="button" aria-label="Decrease" onClick={() => setItemQty(mid, returnable, qty - 1)} className="flex h-8 w-8 items-center justify-center text-navy-600 transition hover:bg-navy-50">
+                          <button type="button" aria-label="Decrease" onClick={() => setItemQty(key, returnable, qty - 1)} className="flex h-8 w-8 items-center justify-center text-navy-600 transition hover:bg-navy-50">
                             <Minus className="h-3.5 w-3.5" />
                           </button>
                           <span className="w-9 text-center text-sm font-semibold text-navy-900">{qty}<span className="text-[10px] font-normal text-navy-400">/{returnable}</span></span>
-                          <button type="button" aria-label="Increase" onClick={() => setItemQty(mid, returnable, qty + 1)} className="flex h-8 w-8 items-center justify-center text-navy-600 transition hover:bg-navy-50">
+                          <button type="button" aria-label="Increase" onClick={() => setItemQty(key, returnable, qty + 1)} className="flex h-8 w-8 items-center justify-center text-navy-600 transition hover:bg-navy-50">
                             <Plus className="h-3.5 w-3.5" />
                           </button>
                         </div>
