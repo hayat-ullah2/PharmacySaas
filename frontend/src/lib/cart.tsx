@@ -25,6 +25,7 @@ interface CartContextValue {
   addItem: (medicine: Medicine, unit: MedicineUnit, qty?: number) => void;
   removeItem: (key: string) => void;
   updateQty: (key: string, qty: number) => void;
+  changeUnit: (key: string, unit: MedicineUnit) => void;
   clear: () => void;
 }
 
@@ -118,6 +119,35 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [write],
   );
 
+  // Switch a line to a different unit (Tablet ⇄ Strip ⇄ Box), recomputing price
+  // and stock cap. Merges into an existing line of the target unit if present.
+  const changeUnit = useCallback(
+    (key: string, unit: MedicineUnit) => {
+      setItems((prev) => {
+        const line = prev.find((i) => i.key === key);
+        if (!line || unit.name === line.unit) return prev;
+        const newKey = keyOf(line.medicineId, unit.name);
+        const usedByOthers = prev
+          .filter((i) => i.medicineId === line.medicineId && i.key !== key && i.key !== newKey)
+          .reduce((s, i) => s + i.quantity * i.factor, 0);
+        const maxUnits = Math.floor((line.stock - usedByOthers) / unit.factor);
+        if (maxUnits < 1) return prev; // not enough stock for even one of the new unit
+        const target = prev.find((i) => i.key === newKey);
+        const desired = (target?.quantity ?? 0) + line.quantity;
+        const quantity = Math.max(1, Math.min(desired, maxUnits));
+        const merged: CartItem = { ...line, key: newKey, unit: unit.name, factor: unit.factor, price: unit.price, quantity };
+        const next: CartItem[] = [];
+        for (const i of prev) {
+          if (i.key === key) next.push(merged);
+          else if (i.key === newKey) continue; // folded into the merged line
+          else next.push(i);
+        }
+        return write(next);
+      });
+    },
+    [write],
+  );
+
   const clear = useCallback(() => setItems((prev) => write(prev.length ? [] : prev)), [write]);
 
   const totals = useMemo<CartTotals>(() => {
@@ -130,8 +160,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   const value = useMemo(
-    () => ({ items, totals, addItem, removeItem, updateQty, clear }),
-    [items, totals, addItem, removeItem, updateQty, clear],
+    () => ({ items, totals, addItem, removeItem, updateQty, changeUnit, clear }),
+    [items, totals, addItem, removeItem, updateQty, changeUnit, clear],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

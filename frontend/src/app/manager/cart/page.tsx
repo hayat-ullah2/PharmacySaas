@@ -6,13 +6,16 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/States";
 import { useCart } from "@/lib/cart";
+import { MEDICINES } from "@/lib/data";
+import { sellableUnits } from "@/lib/units";
 import { formatRs } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 
 export default function CartPage() {
-  const { items, totals, updateQty, removeItem, clear } = useCart();
+  const { items, totals, updateQty, removeItem, changeUnit, clear } = useCart();
   const { toast } = useToast();
 
   if (items.length === 0) {
@@ -52,7 +55,15 @@ export default function CartPage() {
         <Card className="lg:col-span-2">
           <CardHeader title="Cart Items" subtitle={`${items.length} product line(s)`} />
           <CardBody className="space-y-3">
-            {items.map((item) => (
+            {items.map((item) => {
+              const med = MEDICINES.find((m) => m.id === item.medicineId);
+              const units = med ? sellableUnits(med) : [];
+              // Keep the current unit selectable even if packaging changed since adding.
+              if (!units.some((u) => u.name === item.unit)) {
+                units.push({ name: item.unit, factor: item.factor, price: item.price });
+              }
+              const baseName = med?.unit ?? item.unit;
+              return (
               <div key={item.key} className="flex items-center gap-3 rounded-xl border border-navy-100 p-3">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-300">
                   <Pill className="h-7 w-7" />
@@ -63,7 +74,25 @@ export default function CartPage() {
                     {item.prescriptionRequired && <Badge tone="danger"><ShieldAlert className="h-3 w-3" /> Rx</Badge>}
                   </div>
                   <p className="text-xs text-navy-400">{item.genericName} · {item.strength}</p>
-                  <p className="mt-0.5 text-xs font-medium text-primary-600">Per {item.unit}{item.factor > 1 ? ` · ${item.factor} base units` : ""}</p>
+                  {units.length > 1 ? (
+                    <div className="mt-1 w-44">
+                      <Select
+                        aria-label="Sell by unit"
+                        className="h-8 text-xs"
+                        value={item.unit}
+                        onChange={(e) => {
+                          const u = units.find((x) => x.name === e.target.value);
+                          if (u) changeUnit(item.key, u);
+                        }}
+                        options={units.map((u) => ({
+                          value: u.name,
+                          label: u.factor > 1 ? `${u.name} — ${formatRs(u.price)} (${u.factor} ${baseName})` : `${u.name} — ${formatRs(u.price)}`,
+                        }))}
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-0.5 text-xs font-medium text-primary-600">Per {item.unit}</p>
+                  )}
                   <p className="mt-0.5 text-sm font-semibold text-navy-700 sm:hidden">{formatRs(item.price)}</p>
                 </div>
 
@@ -99,7 +128,8 @@ export default function CartPage() {
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </CardBody>
         </Card>
 
