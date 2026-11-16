@@ -8,7 +8,7 @@ import { sellableUnits, baseUnit } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { Badge } from "@/components/ui/Badge";
 import { formatRs, cn } from "@/lib/utils";
-import type { Medicine } from "@/lib/types";
+import type { Medicine, MedicineUnit } from "@/lib/types";
 
 export function MedicineCard({ medicine }: { medicine: Medicine }) {
   const { addItem } = useCart();
@@ -17,26 +17,24 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
   const outOfStock = medicine.stock <= 0;
   const lowStock = medicine.stock > 0 && medicine.stock <= medicine.reorderLevel;
 
-  const add = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Cashier picks the selling unit before adding; price + stock follow the unit.
+  const units = sellableUnits(medicine);
+  const [sel, setSel] = useState<MedicineUnit>(units[units.length - 1] ?? baseUnit(medicine));
+  const maxOfSel = Math.floor(medicine.stock / Math.max(1, sel.factor));
+  const href = `/manager/products/${medicine.id}`;
+
+  const add = () => {
     if (outOfStock) return;
-    // Quick-add the smallest sellable unit (loose tablet / single bottle…).
-    const units = sellableUnits(medicine);
-    const smallest = units[units.length - 1] ?? baseUnit(medicine);
-    addItem(medicine, smallest, 1);
+    addItem(medicine, sel, 1);
     setAdded(true);
-    toast({ type: "success", title: "Added to cart", description: `1 ${smallest.name} · ${medicine.name}` });
+    toast({ type: "success", title: "Added to cart", description: `1 ${sel.name} · ${medicine.name}` });
     setTimeout(() => setAdded(false), 1400);
   };
 
   return (
-    <Link
-      href={`/manager/products/${medicine.id}`}
-      className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-navy-200/70 bg-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
-    >
-      {/* Image */}
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-primary-50 to-navy-50">
+    <div className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-navy-200/70 bg-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover">
+      {/* Image → details */}
+      <Link href={href} className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-primary-50 to-navy-50">
         {medicine.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -61,19 +59,37 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
             Low stock
           </span>
         ) : null}
-      </div>
+      </Link>
 
       {/* Body */}
       <div className="flex flex-1 flex-col p-3.5">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-primary-600">{medicine.category}</p>
-        <h3 className="mt-0.5 truncate text-sm font-semibold text-navy-900">{medicine.name}</h3>
-        <p className="truncate text-xs text-navy-400">{medicine.genericName} · {medicine.strength}</p>
+        <Link href={href} className="block">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-primary-600">{medicine.category}</p>
+          <h3 className="mt-0.5 truncate text-sm font-semibold text-navy-900">{medicine.name}</h3>
+          <p className="truncate text-xs text-navy-400">{medicine.genericName} · {medicine.strength}</p>
+        </Link>
+
+        {/* Unit picker (only when the medicine has packs) */}
+        {units.length > 1 && !outOfStock && (
+          <select
+            aria-label="Sell by unit"
+            value={sel.name}
+            onChange={(e) => { const u = units.find((x) => x.name === e.target.value); if (u) setSel(u); }}
+            className="mt-2 h-8 w-full appearance-none rounded-lg border border-navy-200 bg-white px-2 text-xs font-medium text-navy-700 focus:border-primary-500 focus:outline-none"
+          >
+            {units.map((u) => (
+              <option key={u.name} value={u.name}>
+                {u.name} — {formatRs(u.price)}{u.factor > 1 ? ` (${u.factor} ${medicine.unit})` : ""}
+              </option>
+            ))}
+          </select>
+        )}
 
         <div className="mt-2.5 flex items-end justify-between">
           <div>
-            <p className="text-base font-bold text-navy-900">{formatRs(medicine.sellingPrice)}</p>
+            <p className="text-base font-bold text-navy-900">{formatRs(sel.price)}</p>
             <p className={cn("text-[11px]", outOfStock ? "text-danger-500" : lowStock ? "text-warning-600" : "text-navy-400")}>
-              {outOfStock ? "0 in stock" : `${medicine.stock} in stock`}
+              {outOfStock ? "0 in stock" : `${maxOfSel} ${sel.name}${maxOfSel === 1 ? "" : "s"} in stock`}
             </p>
           </div>
           <button
@@ -93,6 +109,6 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
           </button>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
