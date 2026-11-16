@@ -42,7 +42,52 @@ export const MEDICINE_UNITS = [
   "Box",
   "Pack",
   "Inhaler",
+  "Suppository",
+  "Patch",
   "Piece",
+];
+
+/**
+ * Suggested BASE unit for each dosage form — what one inventory unit is when the
+ * medicine is this form. Used to auto-fill Unit when the dosage form is picked.
+ */
+export const DOSAGE_BASE_UNIT: Record<string, string> = {
+  Tablet: "Tablet",
+  Capsule: "Capsule",
+  Syrup: "Bottle",
+  Suspension: "Bottle",
+  Solution: "Bottle",
+  Drops: "Bottle",
+  Injection: "Vial",
+  Cream: "Tube",
+  Ointment: "Tube",
+  Gel: "Tube",
+  Lotion: "Bottle",
+  Inhaler: "Inhaler",
+  Spray: "Bottle",
+  Suppository: "Suppository",
+  Powder: "Sachet",
+  Sachet: "Sachet",
+  Patch: "Patch",
+};
+
+/** The base unit this dosage form is usually sold in; "" if unknown. */
+export function suggestBaseUnit(dosageForm: string): string {
+  return DOSAGE_BASE_UNIT[dosageForm] ?? "";
+}
+
+/** Common names for a larger pack (what you group base units into). */
+export const PACK_UNIT_NAMES = [
+  "Strip",
+  "Box",
+  "Pack",
+  "Carton",
+  "Sachet",
+  "Bottle",
+  "Tube",
+  "Vial",
+  "Ampoule",
+  "Jar",
 ];
 
 /**

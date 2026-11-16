@@ -12,7 +12,7 @@ import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { MEDICINES, CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
 import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, splitStrength, combineStrength } from "@/lib/medicineOptions";
 import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
-import { validatePackUnits } from "@/lib/units";
+import { validatePackUnits, resolvePackUnits } from "@/lib/units";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { useToast } from "@/lib/toast";
 import type { Medicine } from "@/lib/types";
@@ -78,7 +78,10 @@ export function MedicineEditModal({
       toast({ type: "warning", title: "Already exists", description: `A medicine named "${[trimmedName, strength].filter(Boolean).join(" ")}" already exists.` });
       return;
     }
-    const packs = (form.packUnits ?? []).filter((p) => p.name.trim() || p.factor || p.price);
+    const packs = resolvePackUnits(
+      (form.packUnits ?? []).filter((p) => p.name.trim() || p.factor || p.price),
+      form.unit,
+    );
     const packError = validatePackUnits(packs, form.unit);
     if (packError) {
       toast({ type: "warning", title: "Check packaging", description: packError });

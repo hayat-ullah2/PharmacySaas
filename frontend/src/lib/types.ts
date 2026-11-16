@@ -144,6 +144,11 @@ export interface MedicineUnit {
   name: string;
   factor: number; // how many BASE units one of this unit contains (base unit = 1)
   price: number; // selling price for ONE of this unit (may be non-proportional)
+  // Nested packaging (editor-facing): "1 {name} = {contains} {of}". `factor` is
+  // always the resolved base-unit count and remains the source of truth used by
+  // purchases / batches / POS / returns. When absent, `contains = factor`, `of = base`.
+  contains?: number;
+  of?: string;
 }
 
 export interface SaleItem {

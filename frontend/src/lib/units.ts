@@ -87,16 +87,51 @@ export function formatPackaging(baseQty: number, m: Pick<Medicine, "unit" | "pac
 }
 
 /**
- * Validate pack-unit rows. Returns an error message, or null if valid.
- * Base unit (factor 1) is implicit and must NOT appear here.
+ * Resolve each pack's base-unit `factor` from its nested definition
+ * ("1 {name} = {contains} {of}"), where `of` is the base unit or another pack.
+ * Legacy packs (no contains/of) are treated as `contains = factor`, `of = base`.
+ * Unknown references or loops resolve to factor 0 (flagged by validatePackUnits).
+ */
+export function resolvePackUnits(packs: MedicineUnit[], baseName: string): MedicineUnit[] {
+  const base = (baseName || "unit").trim().toLowerCase();
+  const byName = new Map<string, MedicineUnit>();
+  packs.forEach((p) => {
+    const k = (p.name ?? "").trim().toLowerCase();
+    if (k) byName.set(k, p);
+  });
+  const factorOf = (p: MedicineUnit, stack: Set<string>): number => {
+    const contains = Math.floor(Number(p.contains ?? p.factor ?? 0));
+    if (!Number.isFinite(contains) || contains < 1) return 0;
+    const of = (p.of ?? baseName ?? "").trim().toLowerCase();
+    if (of === base || of === "") return contains;
+    const key = (p.name ?? "").trim().toLowerCase();
+    if (!key || stack.has(key)) return 0; // self / cyclic reference
+    const target = byName.get(of);
+    if (!target) return 0; // references a unit that no longer exists
+    stack.add(key);
+    const sub = factorOf(target, stack);
+    stack.delete(key);
+    return sub > 0 ? contains * sub : 0;
+  };
+  return packs.map((p) => ({ ...p, factor: factorOf(p, new Set()) }));
+}
+
+/**
+ * Validate pack-unit rows (already resolved via resolvePackUnits). Returns an
+ * error message, or null if valid. The base unit (factor 1) is implicit and
+ * must NOT appear here.
  */
 export function validatePackUnits(packs: MedicineUnit[], baseUnitName: string): string | null {
   const seen = new Set<string>([baseUnitName.trim().toLowerCase()]);
   for (const u of packs) {
     const name = (u.name ?? "").trim();
     if (!name) return "Every packaging row needs a unit name.";
+    const contains = Math.floor(Number(u.contains ?? u.factor ?? 0));
+    if (!Number.isInteger(contains) || contains < 2) {
+      return `"${name}" must contain at least 2 of its sub-unit.`;
+    }
     if (!Number.isInteger(u.factor) || u.factor < 2) {
-      return `"${name}" must contain a whole number of base units (2 or more).`;
+      return `Couldn't work out how many ${baseUnitName || "base unit"} are in "${name}" — check its "of" unit (it may be missing or form a loop).`;
     }
     if (!(u.price > 0)) return `"${name}" needs a selling price greater than 0.`;
     const key = name.toLowerCase();

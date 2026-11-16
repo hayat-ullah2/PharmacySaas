@@ -14,8 +14,8 @@ import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
 import { CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
-import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, combineStrength } from "@/lib/medicineOptions";
-import { validatePackUnits } from "@/lib/units";
+import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, combineStrength, suggestBaseUnit } from "@/lib/medicineOptions";
+import { validatePackUnits, resolvePackUnits } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import type { MedicineUnit } from "@/lib/types";
@@ -28,7 +28,9 @@ export default function CreateMedicinePage() {
   const [image, setImage] = useState("");
   const [saving, setSaving] = useState(false);
   // Controlled so the packaging editor can show the live base unit + price.
+  const [dosageForm, setDosageForm] = useState("");
   const [unit, setUnit] = useState("");
+  const [unitTouched, setUnitTouched] = useState(false);
   const [sellingPriceStr, setSellingPriceStr] = useState("");
   const [productType, setProductType] = useState("");
   const [packUnits, setPackUnits] = useState<MedicineUnit[]>([]);
@@ -49,7 +51,10 @@ export default function CreateMedicinePage() {
       }
       if (!expiry) throw new Error("Enter the nearest expiry date for this medicine.");
 
-      const cleanPacks = packUnits.filter((p) => p.name.trim() || p.factor || p.price);
+      const cleanPacks = resolvePackUnits(
+        packUnits.filter((p) => p.name.trim() || p.factor || p.price),
+        String(values.get("unit") ?? ""),
+      );
       const packError = validatePackUnits(cleanPacks, String(values.get("unit") ?? ""));
       if (packError) throw new Error(packError);
 
@@ -133,10 +138,25 @@ export default function CreateMedicinePage() {
             <CardBody className="space-y-4">
               <DosageVsUnitHint />
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Select name="dosageForm" label="Dosage Form" placeholder="Select form" hint="The physical form — what the medicine is (e.g. Tablet, Syrup)." options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
+                <Select
+                  name="dosageForm"
+                  label="Dosage Form"
+                  placeholder="Select form"
+                  hint="The physical form — what the medicine is (e.g. Tablet, Syrup)."
+                  options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))}
+                  value={dosageForm}
+                  onChange={(e) => {
+                    setDosageForm(e.target.value);
+                    // Auto-fill the base Unit from the form, until the user sets it themselves.
+                    if (!unitTouched) {
+                      const suggested = suggestBaseUnit(e.target.value);
+                      if (suggested) setUnit(suggested);
+                    }
+                  }}
+                />
                 <Input name="strengthValue" label="Strength" placeholder="e.g. 500" inputMode="decimal" />
                 <Select name="strengthUnit" label="Strength Unit" placeholder="mg / ml" hint="The dose unit (mg, ml) — not the packaging." options={STRENGTH_UNITS.map((u) => ({ value: u, label: u }))} />
-                <Select name="unit" label="Unit" placeholder="Select unit" hint="The smallest piece you stock & sell — build Box/Strip in Packaging below." options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
+                <Select name="unit" label="Unit" placeholder="Select unit" hint="Auto-set from the dosage form — the smallest piece you stock & sell." options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => { setUnit(e.target.value); setUnitTouched(true); }} />
               </div>
             </CardBody>
           </Card>
