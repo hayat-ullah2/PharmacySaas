@@ -211,7 +211,7 @@ export default function BrandsPage() {
         <div className="space-y-4">
           <Input
             label="Brand name"
-            placeholder="e.g. Panadol"
+            placeholder="e.g. company or brand name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
