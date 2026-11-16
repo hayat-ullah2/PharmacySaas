@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Users as UsersIcon } from "lucide-react";
+import { Plus, Trash2, Users as UsersIcon, Pencil, KeyRound, Ban, CircleCheck } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -66,6 +66,67 @@ export default function UsersPage() {
   const [formError, setFormError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editTarget, setEditTarget] = useState<User | null>(null);
+  const [editName, setEditName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [pwTarget, setPwTarget] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [savingPw, setSavingPw] = useState(false);
+  const [statusBusy, setStatusBusy] = useState<string | null>(null);
+
+  // Shared caller for the update-manager route (rename / suspend / reset password).
+  const callUpdate = async (payload: Record<string, unknown>): Promise<boolean> => {
+    let headers: Record<string, string>;
+    try {
+      headers = await authHeader();
+    } catch {
+      await handleSessionExpired();
+      return false;
+    }
+    const res = await fetch("/api/admin/update-manager", { method: "POST", headers, body: JSON.stringify(payload) });
+    if (res.status === 401) {
+      await handleSessionExpired();
+      return false;
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast({ type: "danger", title: "Action failed", description: data.error ?? "Please try again." });
+      return false;
+    }
+    await reload();
+    return true;
+  };
+
+  const toggleStatus = async (u: User) => {
+    const next = u.status === "active" ? "inactive" : "active";
+    setStatusBusy(u.id);
+    const ok = await callUpdate({ managerId: u.id, action: "set-status", status: next });
+    if (ok) toast({ type: "success", title: next === "inactive" ? "Manager suspended" : "Manager activated", description: `${u.name} ${next === "inactive" ? "can no longer sign in." : "can sign in again."}` });
+    setStatusBusy(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editTarget) return;
+    setSavingEdit(true);
+    const ok = await callUpdate({ managerId: editTarget.id, action: "rename", name: editName.trim() });
+    if (ok) {
+      toast({ type: "success", title: "Manager updated", description: `Name saved.` });
+      setEditTarget(null);
+    }
+    setSavingEdit(false);
+  };
+
+  const savePassword = async () => {
+    if (!pwTarget) return;
+    setSavingPw(true);
+    const ok = await callUpdate({ managerId: pwTarget.id, action: "reset-password", password: newPassword });
+    if (ok) {
+      toast({ type: "success", title: "Password changed", description: `Share the new password with ${pwTarget.name}.` });
+      setPwTarget(null);
+      setNewPassword("");
+    }
+    setSavingPw(false);
+  };
 
   const closeAdd = () => {
     setAddOpen(false);
@@ -187,16 +248,19 @@ export default function UsersPage() {
               •••
             </button>
           }
-          items={[
-            ...(u.role === "manager"
-              ? [{
-                  label: "Delete",
-                  icon: <Trash2 className="h-4 w-4" />,
-                  danger: true,
-                  onClick: () => setDeleteTarget(u),
-                }]
-              : []),
-          ]}
+          items={
+            u.role === "manager"
+              ? [
+                  { label: "Edit name", icon: <Pencil className="h-4 w-4" />, onClick: () => { setEditTarget(u); setEditName(u.name); } },
+                  u.status === "active"
+                    ? { label: statusBusy === u.id ? "Suspending…" : "Suspend", icon: <Ban className="h-4 w-4" />, onClick: () => toggleStatus(u) }
+                    : { label: statusBusy === u.id ? "Activating…" : "Activate", icon: <CircleCheck className="h-4 w-4" />, onClick: () => toggleStatus(u) },
+                  { label: "Change password", icon: <KeyRound className="h-4 w-4" />, onClick: () => { setPwTarget(u); setNewPassword(""); } },
+                  { label: "", divider: true },
+                  { label: "Delete", icon: <Trash2 className="h-4 w-4" />, danger: true, onClick: () => setDeleteTarget(u) },
+                ]
+              : []
+          }
         />
       ),
     },
@@ -309,6 +373,44 @@ export default function UsersPage() {
           <Trash2 className="h-5 w-5 shrink-0" />
           The manager account and its access to this pharmacy will be permanently deleted.
         </div>
+      </Modal>
+
+      <Modal
+        open={!!editTarget}
+        onClose={() => { if (!savingEdit) setEditTarget(null); }}
+        title="Edit manager"
+        description={editTarget ? `Update ${editTarget.email}'s display name.` : ""}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditTarget(null)} disabled={savingEdit}>Cancel</Button>
+            <Button loading={savingEdit} disabled={editName.trim().length < 2} onClick={saveEdit}>Save</Button>
+          </>
+        }
+      >
+        <Input label="Manager full name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="e.g. Ahmed Khan" autoComplete="off" />
+      </Modal>
+
+      <Modal
+        open={!!pwTarget}
+        onClose={() => { if (!savingPw) { setPwTarget(null); setNewPassword(""); } }}
+        title="Change password"
+        description={pwTarget ? `Set a new sign-in password for ${pwTarget.name}.` : ""}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => { setPwTarget(null); setNewPassword(""); }} disabled={savingPw}>Cancel</Button>
+            <Button loading={savingPw} disabled={newPassword.length < 6} onClick={savePassword}>Change Password</Button>
+          </>
+        }
+      >
+        <Input
+          label="New password"
+          type="text"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="At least 6 characters"
+          autoComplete="off"
+          hint="Share this with the manager — it replaces their current password immediately."
+        />
       </Modal>
     </div>
   );
