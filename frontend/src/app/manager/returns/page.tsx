@@ -12,7 +12,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SearchBar } from "@/components/tables/SearchBar";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
-import { SALES, SALES_RETURNS } from "@/lib/data";
+import { SALES, SALES_RETURNS, MEDICINES } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
@@ -170,6 +170,11 @@ export default function ManagerReturnsPage() {
                 {selectedSale.items.map((it, idx) => {
                   const mid = it.medicineId;
                   const key = lineKey(it);
+                  const med = mid ? MEDICINES.find((m) => m.id === mid) : undefined;
+                  // Show the real unit this line sold in; fall back to the medicine's base unit.
+                  const unitLabel = it.unit || med?.unit || "unit";
+                  const factor = it.factor ?? 1;
+                  const baseName = med?.unit || unitLabel;
                   const already = it.returnedQty ?? 0;
                   const returnable = it.quantity - already;
                   const qty = mid ? (returnQty[key] ?? 0) : 0;
@@ -178,15 +183,18 @@ export default function ManagerReturnsPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-navy-800">{it.medicineName}</p>
                         <p className="text-xs text-navy-400">
-                          Sold {it.quantity}{it.unit ? ` ${it.unit}` : ""}{already > 0 ? ` · ${already} returned` : ""} · {formatRs(it.price)} each
+                          Sold {it.quantity} {unitLabel}{factor > 1 ? ` (${factor} ${baseName} each)` : ""}{already > 0 ? ` · ${already} returned` : ""} · {formatRs(it.price)} each
                         </p>
+                        {qty > 0 && factor > 1 ? (
+                          <p className="text-[11px] font-medium text-primary-600">Restocks {qty * factor} {baseName}</p>
+                        ) : null}
                       </div>
                       {mid && returnable > 0 ? (
                         <div className="flex shrink-0 items-center rounded-lg border border-navy-200">
                           <button type="button" aria-label="Decrease" onClick={() => setItemQty(key, returnable, qty - 1)} className="flex h-8 w-8 items-center justify-center text-navy-600 transition hover:bg-navy-50">
                             <Minus className="h-3.5 w-3.5" />
                           </button>
-                          <span className="w-9 text-center text-sm font-semibold text-navy-900">{qty}<span className="text-[10px] font-normal text-navy-400">/{returnable}</span></span>
+                          <span className="min-w-[3.5rem] px-1 text-center text-sm font-semibold text-navy-900">{qty}<span className="text-[10px] font-normal text-navy-400">/{returnable} {unitLabel}</span></span>
                           <button type="button" aria-label="Increase" onClick={() => setItemQty(key, returnable, qty + 1)} className="flex h-8 w-8 items-center justify-center text-navy-600 transition hover:bg-navy-50">
                             <Plus className="h-3.5 w-3.5" />
                           </button>
