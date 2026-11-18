@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
 import { SALES, CUSTOMERS } from "@/lib/data";
 import { formatRs, formatDate } from "@/lib/utils";
@@ -92,8 +93,9 @@ export default function SaleDetailPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-navy-400">Invoice</p>
               <p className="text-xl font-bold text-navy-900">{sale.invoice}</p>
               <p className="mt-1 text-sm text-navy-500">{formatDate(sale.date)}</p>
-              <div className="mt-2 flex sm:justify-end">
+              <div className="mt-2 flex gap-1.5 sm:justify-end">
                 <StatusBadge status={sale.status} />
+                {sale.saleType === "wholesale" && <Badge tone="primary">Wholesale</Badge>}
               </div>
             </div>
           </div>

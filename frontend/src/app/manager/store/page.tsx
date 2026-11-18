@@ -12,7 +12,7 @@ import { MEDICINES, STORE_CATEGORIES } from "@/lib/data";
 import { useCart } from "@/lib/cart";
 
 export default function ManagerStorePage() {
-  const { totals } = useCart();
+  const { totals, saleType, setSaleType } = useCart();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("popular");
@@ -43,19 +43,39 @@ export default function ManagerStorePage() {
             <h1 className="text-xl font-bold">Pharmacy Store</h1>
           </div>
           <p className="mt-1 text-sm text-primary-100">
-            Browse medicines and build a sale — {MEDICINES.length} products available.
+            {saleType === "wholesale"
+              ? "Wholesale mode — adds full packs (box/carton) at their configured price."
+              : `Browse medicines and build a sale — ${MEDICINES.length} products available.`}
           </p>
         </div>
-        <Link href="/manager/cart">
-          <Button variant="secondary" className="bg-white/15 text-white hover:bg-white/25">
-            <ShoppingCart className="h-4 w-4" /> Cart
-            {totals.count > 0 && (
-              <span className="ml-1 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-primary-700">
-                {totals.count}
-              </span>
-            )}
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {/* Retail / Wholesale selling mode for this sale */}
+          <div className="flex rounded-lg bg-white/15 p-0.5 text-xs font-semibold">
+            {(["retail", "wholesale"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setSaleType(m)}
+                className={
+                  "rounded-md px-3 py-1.5 capitalize transition " +
+                  (saleType === m ? "bg-white text-primary-700 shadow-sm" : "text-white/90 hover:bg-white/10")
+                }
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <Link href="/manager/cart">
+            <Button variant="secondary" className="bg-white/15 text-white hover:bg-white/25">
+              <ShoppingCart className="h-4 w-4" /> Cart
+              {totals.count > 0 && (
+                <span className="ml-1 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-primary-700">
+                  {totals.count}
+                </span>
+              )}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Search + sort */}

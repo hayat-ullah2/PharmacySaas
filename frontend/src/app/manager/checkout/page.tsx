@@ -38,7 +38,7 @@ const METHODS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] 
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totals, clear } = useCart();
+  const { items, totals, clear, saleType } = useCart();
   const { completeSale, saveRecord, lastSale, clearLastSale } = usePharmacyData();
   const { toast } = useToast();
   const [customer, setCustomer] = useState("");
@@ -90,7 +90,7 @@ export default function CheckoutPage() {
         discount: totals.discount,
         tax: totals.tax,
         total: totals.total,
-      }, amountPaid);
+      }, amountPaid, saleType);
     } catch (saleError) {
       toast({
         type: "danger",

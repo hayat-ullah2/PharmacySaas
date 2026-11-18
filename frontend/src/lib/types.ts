@@ -185,8 +185,12 @@ export interface Sale {
   returnedAmount?: number;
   payment: PaymentMethod;
   status: SaleStatus;
+  /** retail (loose/strip) vs wholesale (full packs). Absent on old sales = retail. */
+  saleType?: SaleType;
   date: string;
 }
+
+export type SaleType = "retail" | "wholesale";
 
 export interface Customer {
   id: string;

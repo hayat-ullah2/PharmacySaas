@@ -15,7 +15,7 @@ import { formatRs } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 
 export default function CartPage() {
-  const { items, totals, updateQty, removeItem, changeUnit, clear } = useCart();
+  const { items, totals, updateQty, removeItem, changeUnit, saleType, clear } = useCart();
   const { toast } = useToast();
 
   if (items.length === 0) {
@@ -44,9 +44,12 @@ export default function CartPage() {
         description={`${totals.count} item(s) ready for checkout`}
         breadcrumbs={[{ label: "Store", href: "/manager/store" }, { label: "Cart" }]}
         actions={
-          <Button variant="ghost" onClick={() => { clear(); toast({ type: "info", title: "Cart cleared" }); }}>
-            <Trash2 className="h-4 w-4" /> Clear cart
-          </Button>
+          <div className="flex items-center gap-2">
+            <Badge tone={saleType === "wholesale" ? "primary" : "navy"} className="capitalize">{saleType} sale</Badge>
+            <Button variant="ghost" onClick={() => { clear(); toast({ type: "info", title: "Cart cleared" }); }}>
+              <Trash2 className="h-4 w-4" /> Clear cart
+            </Button>
+          </div>
         }
       />
 

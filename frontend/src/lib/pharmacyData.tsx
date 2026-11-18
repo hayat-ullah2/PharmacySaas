@@ -39,6 +39,7 @@ interface PharmacyDataContextValue {
     prescriptionId: string | null,
     totals: { subtotal: number; discount: number; tax: number; total: number },
     amountPaid: number,
+    saleType?: "retail" | "wholesale",
   ) => Promise<{ id: string; invoice: string }>;
 }
 
@@ -298,6 +299,7 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
       prescriptionId: string | null,
       totals: { subtotal: number; discount: number; tax: number; total: number },
       amountPaid: number,
+      saleType: "retail" | "wholesale" = "retail",
     ) => {
       if (!user || user.role !== "manager") {
         throw new Error("A manager account is required to complete a sale.");
@@ -316,6 +318,7 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
         p_total: totals.total,
         p_amount_paid: amountPaid,
         p_prescription_id: prescriptionId,
+        p_sale_type: saleType,
       });
       if (saleError) throw saleError;
 

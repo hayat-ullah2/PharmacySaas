@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { CartItem, Medicine, MedicineUnit } from "./types";
+import type { CartItem, Medicine, MedicineUnit, SaleType } from "./types";
 import { useAuth } from "./auth";
 
 interface CartTotals {
@@ -26,6 +26,8 @@ interface CartContextValue {
   removeItem: (key: string) => void;
   updateQty: (key: string, qty: number) => void;
   changeUnit: (key: string, unit: MedicineUnit) => void;
+  saleType: SaleType;
+  setSaleType: (t: SaleType) => void;
   clear: () => void;
 }
 
@@ -48,7 +50,9 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const storageKey = user ? `medicare.cart.${user.pharmacyId}` : "medicare.cart.signed-out";
+  const typeKey = `${storageKey}.saleType`;
   const [items, setItems] = useState<CartItem[]>([]);
+  const [saleType, setSaleTypeState] = useState<SaleType>("retail");
 
   useEffect(() => {
     try {
@@ -58,7 +62,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setItems([]);
     }
-  }, [storageKey]);
+    try {
+      const t = localStorage.getItem(typeKey);
+      setSaleTypeState(t === "wholesale" ? "wholesale" : "retail");
+    } catch {
+      setSaleTypeState("retail");
+    }
+  }, [storageKey, typeKey]);
+
+  const setSaleType = useCallback((t: SaleType) => {
+    setSaleTypeState(t);
+    try {
+      localStorage.setItem(typeKey, t);
+    } catch {
+      // persistence is optional
+    }
+  }, [typeKey]);
 
   const write = useCallback((next: CartItem[]) => {
     try {
@@ -160,8 +179,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   const value = useMemo(
-    () => ({ items, totals, addItem, removeItem, updateQty, changeUnit, clear }),
-    [items, totals, addItem, removeItem, updateQty, changeUnit, clear],
+    () => ({ items, totals, addItem, removeItem, updateQty, changeUnit, saleType, setSaleType, clear }),
+    [items, totals, addItem, removeItem, updateQty, changeUnit, saleType, setSaleType, clear],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

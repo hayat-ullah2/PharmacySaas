@@ -11,15 +11,23 @@ import { formatRs, cn } from "@/lib/utils";
 import type { Medicine, MedicineUnit } from "@/lib/types";
 
 export function MedicineCard({ medicine }: { medicine: Medicine }) {
-  const { addItem } = useCart();
+  const { addItem, saleType } = useCart();
   const { toast } = useToast();
   const [added, setAdded] = useState(false);
   const outOfStock = medicine.stock <= 0;
   const lowStock = medicine.stock > 0 && medicine.stock <= medicine.reorderLevel;
 
   // Cashier picks the selling unit before adding; price + stock follow the unit.
+  // Wholesale defaults to the largest pack (box/carton); retail to the smallest.
   const units = sellableUnits(medicine);
-  const [sel, setSel] = useState<MedicineUnit>(units[units.length - 1] ?? baseUnit(medicine));
+  const defaultUnit = (saleType === "wholesale" ? units[0] : units[units.length - 1]) ?? baseUnit(medicine);
+  const [sel, setSel] = useState<MedicineUnit>(defaultUnit);
+  // Re-default the unit when the selling mode flips (adjust state during render).
+  const [seenMode, setSeenMode] = useState(saleType);
+  if (seenMode !== saleType) {
+    setSeenMode(saleType);
+    setSel(defaultUnit);
+  }
   const maxOfSel = Math.floor(medicine.stock / Math.max(1, sel.factor));
   const href = `/manager/products/${medicine.id}`;
 
