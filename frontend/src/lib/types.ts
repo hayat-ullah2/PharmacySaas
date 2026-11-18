@@ -31,6 +31,10 @@ export interface Medicine {
   archived?: boolean;
   sellingPrice: number;
   purchasePrice: number;
+  /** MRP / printed price on the pack (Pakistan). Reference only — not charged. */
+  mrp?: number;
+  /** Default supplier this medicine is stocked from (links to Suppliers). */
+  supplier?: string;
   reorderLevel: number;
   stock: number;
   prescriptionRequired: boolean;

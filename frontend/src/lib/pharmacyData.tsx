@@ -22,7 +22,7 @@ interface PharmacyDataContextValue {
   clearLastSale: () => void;
   reload: () => Promise<void>;
   saveRecord: <T extends { id: string }>(entity: string, record: T) => Promise<void>;
-  createMedicine: (medicine: Medicine) => Promise<void>;
+  createMedicine: (medicine: Medicine & { openingBatchNumber?: string }) => Promise<void>;
   addBatch: (batch: Record<string, unknown>) => Promise<void>;
   adjustStock: (medicineId: string, newStock: number, reason: string) => Promise<void>;
   receivePurchase: (purchaseId: string) => Promise<void>;
@@ -183,7 +183,7 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
     [user, reload],
   );
 
-  const createMedicine = useCallback(async (medicine: Medicine) => {
+  const createMedicine = useCallback(async (medicine: Medicine & { openingBatchNumber?: string }) => {
     if (!user || user.role !== "admin") {
       throw new Error("Only the pharmacy owner can add medicines.");
     }

@@ -63,9 +63,11 @@ export default function MedicineDetailPage() {
     { label: "Category", value: medicine.category },
     { label: "Brand", value: medicine.brand },
     { label: "Manufacturer", value: medicine.manufacturer },
+    { label: "Supplier", value: medicine.supplier || "—" },
     { label: "Dosage Form", value: medicine.dosageForm },
     { label: "Strength", value: medicine.strength },
     { label: "Unit", value: medicine.unit },
+    { label: "MRP / Printed", value: medicine.mrp != null ? formatRs(medicine.mrp) : "—" },
     { label: "SKU", value: medicine.sku },
   ];
 

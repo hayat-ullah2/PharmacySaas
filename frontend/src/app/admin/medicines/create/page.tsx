@@ -13,7 +13,7 @@ import { Toggle } from "@/components/ui/Toggle";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
-import { CATEGORIES, BRANDS, MANUFACTURERS } from "@/lib/data";
+import { CATEGORIES, BRANDS, MANUFACTURERS, SUPPLIERS } from "@/lib/data";
 import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, combineStrength, suggestBaseUnit } from "@/lib/medicineOptions";
 import { validatePackUnits, resolvePackUnits } from "@/lib/units";
 import { useToast } from "@/lib/toast";
@@ -49,6 +49,11 @@ export default function CreateMedicinePage() {
       if (![stock, reorderLevel, sellingPrice, purchasePrice].every((value) => Number.isFinite(value) && value >= 0)) {
         throw new Error("Stock, reorder level, and prices must be valid non-negative numbers.");
       }
+      const mrpStr = String(values.get("mrp") ?? "").trim();
+      const mrp = mrpStr ? Number(mrpStr) : undefined;
+      if (mrp !== undefined && (!Number.isFinite(mrp) || mrp < 0)) {
+        throw new Error("MRP / printed price must be a valid non-negative number.");
+      }
       if (!expiry) throw new Error("Enter the nearest expiry date for this medicine.");
 
       const cleanPacks = resolvePackUnits(
@@ -83,6 +88,9 @@ export default function CreateMedicinePage() {
         unit: String(values.get("unit") ?? ""),
         sellingPrice,
         purchasePrice,
+        mrp,
+        supplier: String(values.get("supplier") ?? "") || undefined,
+        openingBatchNumber: String(values.get("batchNumber") ?? "").trim() || undefined,
         reorderLevel,
         stock,
         prescriptionRequired: rxRequired,
@@ -129,7 +137,8 @@ export default function CreateMedicinePage() {
               <Input name="genericName" label="Generic Name" placeholder="e.g. Paracetamol" required />
               <Select name="brand" label="Brand" placeholder="Select brand" options={BRANDS.map((b) => ({ value: b.name, label: b.name }))} />
               <Select name="category" label="Category" placeholder="Select category" options={CATEGORIES.map((c) => ({ value: c.name, label: c.name }))} />
-              <Select name="manufacturer" label="Manufacturer" placeholder="Select manufacturer" options={MANUFACTURERS.map((m) => ({ value: m.name, label: m.name }))} className="sm:col-span-2" />
+              <Select name="manufacturer" label="Manufacturer" placeholder="Select manufacturer" options={MANUFACTURERS.map((m) => ({ value: m.name, label: m.name }))} />
+              <Select name="supplier" label="Supplier (optional)" placeholder="Select supplier" hint="Where this stock is sourced from." options={SUPPLIERS.map((s) => ({ value: s.name, label: s.name }))} />
             </CardBody>
           </Card>
 
@@ -164,10 +173,12 @@ export default function CreateMedicinePage() {
           <Card>
             <CardHeader title="Pricing & Stock" subtitle="Pricing and reorder configuration" />
             <CardBody className="grid gap-4 sm:grid-cols-2">
-              <Input name="sellingPrice" label="Selling Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required value={sellingPriceStr} onChange={(e) => setSellingPriceStr(e.target.value)} />
+              <Input name="sellingPrice" label="Selling Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required value={sellingPriceStr} onChange={(e) => setSellingPriceStr(e.target.value)} hint="What you charge per base unit." />
+              <Input name="mrp" label="MRP / Printed Price (Rs)" type="number" placeholder="0" min={0} step="0.01" hint="Price printed on the pack (reference)." />
               <Input name="purchasePrice" label="Purchase Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required />
               <Input name="reorderLevel" label="Reorder Level" type="number" placeholder="e.g. 30" min={0} required />
               <Input name="stock" label="Opening Stock" type="number" placeholder="0" min={0} required />
+              <Input name="batchNumber" label="Batch Number (optional)" placeholder="Auto if blank" />
               <Input name="expiry" label="Nearest Batch Expiry" type="date" required />
               <Input name="sku" label="SKU / Barcode" placeholder="e.g. PAN-500" />
             </CardBody>
