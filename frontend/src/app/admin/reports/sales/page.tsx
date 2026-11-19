@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, Wallet, ShoppingBag, Sigma, Package, Receipt } from "lucide-react";
+import { Download, Wallet, ShoppingBag, Sigma, Package, Receipt, Printer, FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
@@ -18,13 +18,19 @@ import { EmptyState } from "@/components/ui/States";
 import { SALES, CATEGORY_SALES } from "@/lib/data";
 import { formatRs, formatDate, paginate } from "@/lib/utils";
 import { exportToCsv } from "@/lib/csv";
+import { buildSalesReportHtml, printReportHtml, downloadReportDoc } from "@/lib/printReport";
+import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
 import type { Sale } from "@/lib/types";
 
 const PER_PAGE = 8;
 
+// Local YYYY-MM-DD (matches the date inputs + how sales store their date).
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 export default function SalesReportPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -33,6 +39,16 @@ export default function SalesReportPage() {
   const [page, setPage] = useState(1);
 
   const resetPage = () => setPage(1);
+
+  // Quick date-range presets (daily / weekly / monthly / all).
+  const setPreset = (kind: "today" | "week" | "month" | "all") => {
+    const now = new Date();
+    if (kind === "all") { setFrom(""); setTo(""); }
+    else if (kind === "today") { const t = ymd(now); setFrom(t); setTo(t); }
+    else if (kind === "week") { const start = new Date(now); start.setDate(now.getDate() - 6); setFrom(ymd(start)); setTo(ymd(now)); }
+    else { setFrom(ymd(new Date(now.getFullYear(), now.getMonth(), 1))); setTo(ymd(now)); }
+    resetPage();
+  };
 
   const filtered = useMemo(() => {
     return SALES.filter((s) => {
@@ -62,6 +78,7 @@ export default function SalesReportPage() {
     const count = exportToCsv("sales-report.csv", filtered, [
       { header: "Invoice", value: (s) => s.invoice },
       { header: "Customer", value: (s) => s.customer },
+      { header: "Type", value: (s) => s.saleType ?? "retail" },
       { header: "Items", value: (s) => s.itemCount },
       { header: "Subtotal", value: (s) => s.subtotal },
       { header: "Discount", value: (s) => s.discount },
@@ -76,11 +93,36 @@ export default function SalesReportPage() {
       : { type: "info", title: "Nothing to export", description: "No sales match the current filters." });
   };
 
+  // Human label for the selected period, shown on the printable report.
+  const rangeLabel = from && to
+    ? (from === to ? formatDate(from) : `${formatDate(from)} — ${formatDate(to)}`)
+    : from ? `From ${formatDate(from)}` : to ? `Until ${formatDate(to)}` : "All time";
+
+  const reportHtml = () => buildSalesReportHtml(filtered, {
+    pharmacyName: user?.pharmacyName ?? "Pharmacy",
+    title: "Sales Report",
+    rangeLabel,
+  });
+
+  const printReport = () => {
+    if (filtered.length === 0) { toast({ type: "info", title: "Nothing to print", description: "No sales match the current filters." }); return; }
+    if (!printReportHtml(reportHtml())) {
+      toast({ type: "warning", title: "Pop-up blocked", description: "Allow pop-ups for this site to print / save as PDF." });
+    }
+  };
+
+  const wordReport = () => {
+    if (filtered.length === 0) { toast({ type: "info", title: "Nothing to export", description: "No sales match the current filters." }); return; }
+    downloadReportDoc(`sales-report-${from || "all"}${to ? `_${to}` : ""}.doc`, reportHtml());
+    toast({ type: "success", title: "Word report downloaded", description: `${filtered.length} invoice(s) · ${rangeLabel}.` });
+  };
+
   const paged = paginate(filtered, page, PER_PAGE);
 
   const columns: Column<Sale>[] = [
     { key: "invoice", header: "Invoice", render: (s) => <span className="font-semibold text-navy-900">{s.invoice}</span> },
     { key: "customer", header: "Customer", render: (s) => <span className="text-navy-700">{s.customer}</span> },
+    { key: "saleType", header: "Type", hideOnMobile: true, render: (s) => <span className="capitalize text-navy-600">{s.saleType ?? "retail"}</span> },
     { key: "total", header: "Total", align: "right", render: (s) => <span className="font-semibold text-navy-900">{formatRs(s.total)}</span> },
     { key: "payment", header: "Payment", hideOnMobile: true, render: (s) => <span className="capitalize text-navy-600">{s.payment}</span> },
     { key: "status", header: "Status", render: (s) => <StatusBadge status={s.status} /> },
@@ -94,15 +136,28 @@ export default function SalesReportPage() {
         description="Revenue performance, top-selling categories, and invoice detail."
         breadcrumbs={[{ label: "Home", href: "/admin/dashboard" }, { label: "Reports", href: "/admin/reports" }, { label: "Sales" }]}
         actions={
-          <Button variant="outline" onClick={exportSales}>
-            <Download className="h-4 w-4" /> Export
-          </Button>
+          <>
+            <Button variant="outline" onClick={printReport}>
+              <Printer className="h-4 w-4" /> Print / PDF
+            </Button>
+            <Button variant="outline" onClick={wordReport}>
+              <FileText className="h-4 w-4" /> Word
+            </Button>
+            <Button variant="outline" onClick={exportSales}>
+              <Download className="h-4 w-4" /> CSV
+            </Button>
+          </>
         }
       />
 
       {/* Filter bar */}
       <Card>
         <CardBody>
+          <div className="mb-3 flex flex-wrap gap-2">
+            {([["today", "Today"], ["week", "Last 7 days"], ["month", "This month"], ["all", "All time"]] as const).map(([k, label]) => (
+              <Button key={k} variant="outline" size="sm" onClick={() => setPreset(k)}>{label}</Button>
+            ))}
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Input label="Date from" type="date" value={from} onChange={(e) => { setFrom(e.target.value); resetPage(); }} />
             <Input label="Date to" type="date" value={to} onChange={(e) => { setTo(e.target.value); resetPage(); }} />
