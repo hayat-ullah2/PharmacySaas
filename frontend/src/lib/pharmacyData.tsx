@@ -41,6 +41,7 @@ interface PharmacyDataContextValue {
     amountPaid: number,
     saleType?: "retail" | "wholesale",
   ) => Promise<{ id: string; invoice: string }>;
+  recordCashDeposit: (amount: number, note: string) => Promise<void>;
 }
 
 const PharmacyDataContext = createContext<PharmacyDataContextValue | null>(null);
@@ -339,6 +340,18 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
     [user, reload],
   );
 
+  const recordCashDeposit = useCallback(async (amount: number, note: string) => {
+    if (!user || user.role !== "manager") {
+      throw new Error("Only a cashier can record a cash deposit.");
+    }
+    const { error: depositError } = await getSupabaseClient().rpc("record_cash_deposit", {
+      p_amount: amount,
+      p_note: note || null,
+    });
+    if (depositError) throw depositError;
+    await reload();
+  }, [user, reload]);
+
   const clearLastSale = useCallback(() => setLastSale(null), []);
 
   const value = useMemo(
@@ -363,8 +376,9 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
       setManagerStatus,
       savePharmacy,
       completeSale,
+      recordCashDeposit,
     }),
-    [user, ready, loadedPharmacyId, revision, error, lastSale, clearLastSale, reload, saveRecord, createMedicine, addBatch, adjustStock, receivePurchase, recordSaleReturn, recordPurchaseReturn, deleteRecord, inviteManager, setManagerStatus, savePharmacy, completeSale],
+    [user, ready, loadedPharmacyId, revision, error, lastSale, clearLastSale, reload, saveRecord, createMedicine, addBatch, adjustStock, receivePurchase, recordSaleReturn, recordPurchaseReturn, deleteRecord, inviteManager, setManagerStatus, savePharmacy, completeSale, recordCashDeposit],
   );
 
   return (

@@ -2,6 +2,7 @@ import type {
   AuditLog,
   Batch,
   Brand,
+  CashLedgerEntry,
   Category,
   Customer,
   Expense,
@@ -334,6 +335,7 @@ export const AUDIT_LOGS = liveArray("audit_logs", SAMPLE_AUDIT_LOGS);
 export const ADJUSTMENTS = liveArray<StockAdjustment>("adjustments", []);
 export const SALES_RETURNS = liveArray<SalesReturn>("sales_returns", []);
 export const PURCHASE_RETURNS = liveArray<PurchaseReturn>("purchase_returns", []);
+export const CASH_LEDGER = liveArray<CashLedgerEntry>("cash_ledger", []);
 export const NOTIFICATIONS = liveArray("notifications", SAMPLE_NOTIFICATIONS);
 export const SETTINGS = liveArray<PharmacySettings>("settings", []);
 

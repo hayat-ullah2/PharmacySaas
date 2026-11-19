@@ -187,10 +187,25 @@ export interface Sale {
   status: SaleStatus;
   /** retail (loose/strip) vs wholesale (full packs). Absent on old sales = retail. */
   saleType?: SaleType;
+  /** The cashier (manager) who rang the sale — for cash accountability. */
+  cashierId?: string;
+  cashierName?: string;
   date: string;
 }
 
 export type SaleType = "retail" | "wholesale";
+
+/** A cash hand-over / deposit recorded by a cashier (Ledger / Khata). */
+export interface CashLedgerEntry {
+  id: string;
+  cashierId: string;
+  cashierName: string;
+  amount: number;
+  note?: string;
+  type: "deposit";
+  date: string;
+  createdAt?: string;
+}
 
 export interface Customer {
   id: string;

@@ -72,6 +72,7 @@ export const ADMIN_NAV: NavSection[] = [
     title: "Finance",
     links: [
       { label: "Payments", href: "/admin/finance/payments", icon: Wallet },
+      { label: "Cash Ledger", href: "/admin/ledger", icon: ScrollText },
       { label: "Expenses", href: "/admin/finance/expenses", icon: Receipt },
       { label: "Receivables", href: "/admin/finance/receivables", icon: ArrowDownToLine },
       { label: "Payables", href: "/admin/finance/payables", icon: ArrowUpFromLine },
@@ -109,6 +110,7 @@ export const MANAGER_NAV: NavSection[] = [
     links: [
       { label: "Sales", href: "/manager/sales", icon: ShoppingCart },
       { label: "Returns", href: "/manager/returns", icon: RotateCcw },
+      { label: "Cash Ledger", href: "/manager/ledger", icon: Wallet },
       { label: "Prescriptions", href: "/manager/prescriptions", icon: FileText },
     ],
   },
