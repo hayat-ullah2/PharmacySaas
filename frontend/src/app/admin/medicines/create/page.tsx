@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, X, Pill } from "lucide-react";
+import { Save, X, Pill, Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,7 @@ import { Toggle } from "@/components/ui/Toggle";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
+import { QuickAddEntityModal, type EntityKind } from "@/components/entities/QuickAddEntityModal";
 import { CATEGORIES, BRANDS, MANUFACTURERS, SUPPLIERS } from "@/lib/data";
 import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, combineStrength, suggestBaseUnit } from "@/lib/medicineOptions";
 import { validatePackUnits, resolvePackUnits } from "@/lib/units";
@@ -35,6 +36,19 @@ export default function CreateMedicinePage() {
   const [productType, setProductType] = useState("");
   const [packUnits, setPackUnits] = useState<MedicineUnit[]>([]);
   const [allowLoose, setAllowLoose] = useState(true);
+  // Controlled so a quick-added brand/category/etc. can be auto-selected.
+  const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState("");
+  const [manufacturer, setManufacturer] = useState("");
+  const [supplier, setSupplier] = useState("");
+  const [quickAdd, setQuickAdd] = useState<EntityKind | null>(null);
+
+  const onQuickCreated = (name: string) => {
+    if (quickAdd === "brands") setBrand(name);
+    else if (quickAdd === "categories") setCategory(name);
+    else if (quickAdd === "manufacturers") setManufacturer(name);
+    else if (quickAdd === "suppliers") setSupplier(name);
+  };
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -135,10 +149,18 @@ export default function CreateMedicinePage() {
             <CardBody className="grid gap-4 sm:grid-cols-2">
               <Input name="name" label="Medicine Name" placeholder="e.g. Panadol" required />
               <Input name="genericName" label="Generic Name" placeholder="e.g. Paracetamol" required />
-              <Select name="brand" label="Brand" placeholder="Select brand" options={BRANDS.map((b) => ({ value: b.name, label: b.name }))} />
-              <Select name="category" label="Category" placeholder="Select category" options={CATEGORIES.map((c) => ({ value: c.name, label: c.name }))} />
-              <Select name="manufacturer" label="Manufacturer" placeholder="Select manufacturer" options={MANUFACTURERS.map((m) => ({ value: m.name, label: m.name }))} />
-              <Select name="supplier" label="Supplier (optional)" placeholder="Select supplier" hint="Where this stock is sourced from." options={SUPPLIERS.map((s) => ({ value: s.name, label: s.name }))} />
+              <FieldWithAdd label="Brand" onAdd={() => setQuickAdd("brands")}>
+                <Select name="brand" placeholder="Select brand" value={brand} onChange={(e) => setBrand(e.target.value)} options={BRANDS.map((b) => ({ value: b.name, label: b.name }))} />
+              </FieldWithAdd>
+              <FieldWithAdd label="Category" onAdd={() => setQuickAdd("categories")}>
+                <Select name="category" placeholder="Select category" value={category} onChange={(e) => setCategory(e.target.value)} options={CATEGORIES.map((c) => ({ value: c.name, label: c.name }))} />
+              </FieldWithAdd>
+              <FieldWithAdd label="Manufacturer" onAdd={() => setQuickAdd("manufacturers")}>
+                <Select name="manufacturer" placeholder="Select manufacturer" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} options={MANUFACTURERS.map((m) => ({ value: m.name, label: m.name }))} />
+              </FieldWithAdd>
+              <FieldWithAdd label="Supplier (optional)" onAdd={() => setQuickAdd("suppliers")}>
+                <Select name="supplier" placeholder="Select supplier" hint="Where this stock is sourced from." value={supplier} onChange={(e) => setSupplier(e.target.value)} options={SUPPLIERS.map((s) => ({ value: s.name, label: s.name }))} />
+              </FieldWithAdd>
             </CardBody>
           </Card>
 
@@ -250,6 +272,28 @@ export default function CreateMedicinePage() {
           </Card>
         </div>
       </form>
+
+      <QuickAddEntityModal
+        kind={quickAdd}
+        open={!!quickAdd}
+        onClose={() => setQuickAdd(null)}
+        onCreated={onQuickCreated}
+      />
+    </div>
+  );
+}
+
+/** A labelled field with a small "+ Add" action that opens a quick-add modal. */
+function FieldWithAdd({ label, onAdd, children }: { label: string; onAdd: () => void; children: React.ReactNode }) {
+  return (
+    <div className="w-full">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-sm font-medium text-navy-700">{label}</span>
+        <button type="button" onClick={onAdd} className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 transition hover:text-primary-700">
+          <Plus className="h-3.5 w-3.5" /> Add
+        </button>
+      </div>
+      {children}
     </div>
   );
 }
