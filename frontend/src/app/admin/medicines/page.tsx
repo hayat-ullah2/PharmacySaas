@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Download, Eye, Pencil, Trash2, Pill, Archive, ArchiveRestore } from "lucide-react";
+import { Plus, Download, Upload, Eye, Pencil, Trash2, Pill, Archive, ArchiveRestore } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -17,10 +17,11 @@ import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { MedicineEditModal } from "@/components/medicines/MedicineEditModal";
+import { MedicineImportModal } from "@/components/medicines/MedicineImportModal";
 import { MEDICINES, CATEGORIES, BRANDS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate, paginate } from "@/lib/utils";
-import { exportToCsv } from "@/lib/csv";
+import { exportMedicinesXlsx } from "@/lib/medicineXlsx";
 import { useToast } from "@/lib/toast";
 import type { Medicine } from "@/lib/types";
 
@@ -29,7 +30,8 @@ const PER_PAGE = 8;
 export default function MedicinesPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { deleteRecord, saveRecord } = usePharmacyData();
+  const { deleteRecord, saveRecord, reload } = usePharmacyData();
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
@@ -152,24 +154,14 @@ export default function MedicinesPage() {
         breadcrumbs={[{ label: "Home", href: "/admin/dashboard" }, { label: "Products" }, { label: "Medicines" }]}
         actions={
           <>
-            <Button variant="outline" onClick={() => {
-              const n = exportToCsv("medicines.csv", filtered, [
-                { header: "Name", value: (m) => m.name },
-                { header: "Generic", value: (m) => m.genericName },
-                { header: "Category", value: (m) => m.category },
-                { header: "Brand", value: (m) => m.brand },
-                { header: "Manufacturer", value: (m) => m.manufacturer },
-                { header: "Strength", value: (m) => m.strength },
-                { header: "Unit", value: (m) => m.unit },
-                { header: "Selling Price", value: (m) => m.sellingPrice },
-                { header: "Purchase Price", value: (m) => m.purchasePrice },
-                { header: "Stock", value: (m) => m.stock },
-                { header: "Reorder Level", value: (m) => m.reorderLevel },
-                { header: "Status", value: (m) => m.status },
-                { header: "Expiry", value: (m) => m.expiry },
-                { header: "SKU", value: (m) => m.sku },
-              ]);
-              toast(n ? { type: "success", title: "Export ready", description: `${n} medicine(s) downloaded as CSV.` } : { type: "info", title: "Nothing to export", description: "No medicines match the current filters." });
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4" /> Import
+            </Button>
+            <Button variant="outline" onClick={async () => {
+              const all = [...MEDICINES];
+              if (all.length === 0) { toast({ type: "info", title: "Nothing to export", description: "No medicines yet." }); return; }
+              await exportMedicinesXlsx(all, "medicines.xlsx");
+              toast({ type: "success", title: "Export ready", description: `${all.length} medicine(s) downloaded as Excel.` });
             }}>
               <Download className="h-4 w-4" /> Export
             </Button>
@@ -237,6 +229,13 @@ export default function MedicinesPage() {
           </div>
         )}
       </Card>
+
+      <MedicineImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        existing={[...MEDICINES]}
+        onImported={reload}
+      />
 
       {editTarget && (
         <MedicineEditModal medicine={editTarget} onClose={() => setEditTarget(null)} />
