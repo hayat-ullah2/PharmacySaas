@@ -76,20 +76,20 @@ export function AppShell({
   const sections = variant === "admin" ? ADMIN_NAV : MANAGER_NAV;
 
   return (
-    <div className="flex min-h-screen bg-navy-50/60">
+    <div className="flex h-screen overflow-hidden bg-navy-50/60">
       <Sidebar
         sections={sections}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         variant={variant}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} variant={variant} />
         <main
           className={
             variant === "manager"
-              ? "flex-1 px-4 py-5 pb-24 lg:px-6 lg:pb-6"
-              : "flex-1 px-4 py-5 lg:px-6"
+              ? "flex-1 overflow-y-auto px-4 py-5 pb-24 lg:px-6 lg:pb-6"
+              : "flex-1 overflow-y-auto px-4 py-5 lg:px-6"
           }
         >
           {dataError && (
