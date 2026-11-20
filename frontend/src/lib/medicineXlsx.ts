@@ -1,7 +1,8 @@
 "use client";
 
-import type { Medicine } from "./types";
+import type { Medicine, MedicineUnit } from "./types";
 import { combineStrength, splitStrength } from "./medicineOptions";
+import { resolvePackUnits, validatePackUnits } from "./units";
 
 // The import/export template columns, in order. `key` maps to a Medicine field.
 export const MEDICINE_COLUMNS: { header: string; key: string; required?: boolean; width?: number }[] = [
@@ -25,6 +26,15 @@ export const MEDICINE_COLUMNS: { header: string; key: string; required?: boolean
   { header: "SKU", key: "sku", width: 14 },
   { header: "Prescription Required (yes/no)", key: "prescriptionRequired", width: 26 },
   { header: "Description", key: "description", width: 28 },
+  // --- Packaging & unit pricing (optional): builds Outer → Sub → base ---
+  { header: "Sub-Package Name", key: "subName", width: 16 },
+  { header: "Units per Sub-Package", key: "subUnits", width: 18 },
+  { header: "Sub-Package Price", key: "subPrice", width: 16 },
+  { header: "Outer Pack Name", key: "outerName", width: 16 },
+  { header: "Sub-Packages per Outer", key: "outerUnits", width: 20 },
+  { header: "Outer Pack Price", key: "outerPrice", width: 16 },
+  { header: "Allow Retail (yes/no)", key: "allowRetail", width: 18 },
+  { header: "Allow Wholesale (yes/no)", key: "allowWholesale", width: 20 },
 ];
 
 export interface ParsedRow {
@@ -60,6 +70,9 @@ export async function buildMedicinesWorkbook(medicines: Medicine[]): Promise<Arr
   ws.getRow(1).font = { bold: true };
   for (const m of medicines) {
     const { value, unit } = splitStrength(m.strength, m.strengthUnit);
+    const packs = [...(m.packUnits ?? [])].filter((u) => u.factor > 1).sort((a, b) => a.factor - b.factor);
+    const sub = packs[0];
+    const outer = packs[1];
     ws.addRow({
       name: m.name,
       genericName: m.genericName,
@@ -81,6 +94,14 @@ export async function buildMedicinesWorkbook(medicines: Medicine[]): Promise<Arr
       sku: m.sku,
       prescriptionRequired: m.prescriptionRequired ? "yes" : "no",
       description: m.description ?? "",
+      subName: sub?.name ?? "",
+      subUnits: sub ? (sub.contains ?? sub.factor) : "",
+      subPrice: sub?.price ?? "",
+      outerName: outer?.name ?? "",
+      outerUnits: outer ? (outer.contains ?? Math.round(outer.factor / (sub?.factor || 1))) : "",
+      outerPrice: outer?.price ?? "",
+      allowRetail: m.allowLoose === false ? "no" : "yes",
+      allowWholesale: m.allowWholesale === false ? "no" : "yes",
     });
   }
   return (await wb.xlsx.writeBuffer()) as ArrayBuffer;
@@ -104,6 +125,8 @@ export async function downloadMedicineTemplate(): Promise<void> {
     dosageForm: "Tablet", strengthValue: "500", strengthUnit: "mg", unit: "Tablet", sellingPrice: 5, purchasePrice: 3,
     mrp: 7, supplier: "", reorderLevel: 50, stock: 1000, expiry: "2027-12-31", openingBatchNumber: "PAN-2026-01",
     sku: "PAN-500", prescriptionRequired: "no", description: "Analgesic / antipyretic",
+    subName: "Strip", subUnits: 10, subPrice: 70, outerName: "Carton", outerUnits: 100, outerPrice: 7000,
+    allowRetail: "yes", allowWholesale: "yes",
   });
   ws.addRow({
     name: "Augmentin", genericName: "Amoxicillin + Clavulanate", category: "Antibiotics", brand: "GSK", manufacturer: "GSK",
@@ -129,6 +152,10 @@ export async function downloadMedicineTemplate(): Promise<void> {
     ["Batch Number", "No", "Opening batch number; auto-generated if blank."],
     ["Prescription Required", "No", "yes / no (default no)."],
     ["Category, Brand, Manufacturer, Supplier, SKU, Description", "No", "Optional free text."],
+    ["Sub-Package Name + Units per Sub-Package + Price", "No", "e.g. Strip, 10, 70 → 1 Strip = 10 base units at its own price."],
+    ["Outer Pack Name + Sub-Packages per Outer + Price", "No", "e.g. Carton, 100, 7000 → 1 Carton = 100 Strips = 1,000 base units."],
+    ["Allow Retail (yes/no)", "No", "Can it be sold as a single base unit? Default yes."],
+    ["Allow Wholesale (yes/no)", "No", "Can it be sold in POS wholesale mode? Default yes."],
     ["—", "—", "Each medicine must have a unique Name + Strength in your pharmacy. Duplicates are rejected."],
   ];
   rules.forEach((r) => notes.addRow(r));
@@ -235,6 +262,32 @@ export function validateImportRows(rows: ParsedRow[], existing: Medicine[]): Val
       if (existingKeys.has(dupKey)) errors.push(`"${[name, strength].filter(Boolean).join(" ")}" already exists in your pharmacy.`);
       else if (seenInFile.has(dupKey)) errors.push(`Duplicate of an earlier row in this file ("${[name, strength].filter(Boolean).join(" ")}").`);
     }
+    // Packaging (optional): build Sub (of base) and Outer (of Sub, or base) packs.
+    const packInput: MedicineUnit[] = [];
+    const subName = g("subName");
+    const outerName = g("outerName");
+    if (subName) {
+      const su = asNumber(raw.subUnits);
+      const sp = asNumber(raw.subPrice);
+      if (!Number.isInteger(su) || su < 2) errors.push('"Units per Sub-Package" must be a whole number of 2 or more.');
+      if (!(sp > 0)) errors.push('"Sub-Package Price" must be greater than 0.');
+      if (Number.isInteger(su) && su >= 2 && sp > 0) packInput.push({ name: subName, contains: su, of: "", price: sp, factor: 0 });
+    }
+    if (outerName) {
+      const ou = asNumber(raw.outerUnits);
+      const op = asNumber(raw.outerPrice);
+      if (!Number.isInteger(ou) || ou < 2) errors.push('"Sub-Packages per Outer" must be a whole number of 2 or more.');
+      if (!(op > 0)) errors.push('"Outer Pack Price" must be greater than 0.');
+      if (Number.isInteger(ou) && ou >= 2 && op > 0) packInput.push({ name: outerName, contains: ou, of: subName || "", price: op, factor: 0 });
+    }
+    let packUnits: MedicineUnit[] | undefined;
+    if (packInput.length > 0) {
+      const resolved = resolvePackUnits(packInput, unit);
+      const packErr = validatePackUnits(resolved, unit);
+      if (packErr) errors.push(packErr);
+      else packUnits = resolved;
+    }
+
     if (errors.length === 0) seenInFile.add(dupKey);
 
     if (errors.length > 0) return { row, errors };
@@ -261,6 +314,9 @@ export function validateImportRows(rows: ParsedRow[], existing: Medicine[]): Val
       expiry,
       status: "healthy", // server recomputes on create
       sku: g("sku"),
+      ...(packUnits ? { packUnits } : {}),
+      ...(isBlank(raw.allowRetail) ? {} : { allowLoose: truthy(raw.allowRetail) }),
+      ...(isBlank(raw.allowWholesale) ? {} : { allowWholesale: truthy(raw.allowWholesale) }),
       ...(g("openingBatchNumber") ? { openingBatchNumber: g("openingBatchNumber") } : {}),
     } as Medicine;
 

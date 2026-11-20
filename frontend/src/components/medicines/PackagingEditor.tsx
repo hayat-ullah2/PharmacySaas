@@ -23,18 +23,22 @@ export function PackagingEditor({
   productType,
   packUnits,
   allowLoose,
+  allowWholesale = true,
   onProductType,
   onPackUnits,
   onAllowLoose,
+  onAllowWholesale,
 }: {
   baseUnit: string;
   basePrice: number;
   productType: string;
   packUnits: MedicineUnit[];
   allowLoose: boolean;
+  allowWholesale?: boolean;
   onProductType: (v: string) => void;
   onPackUnits: (v: MedicineUnit[]) => void;
   onAllowLoose: (v: boolean) => void;
+  onAllowWholesale?: (v: boolean) => void;
 }) {
   const [open, setOpen] = useState(packUnits.length > 0);
   const base = baseUnit || "unit";
@@ -164,11 +168,19 @@ export function PackagingEditor({
         </div>
       )}
 
-      <div className="mt-4 border-t border-navy-100 pt-3">
-        <Toggle label={`Allow selling a single ${base} (loose)`} checked={allowLoose} onChange={onAllowLoose} />
-        <p className="mt-1 text-xs text-navy-400">
-          Turn off for medicines that must be sold in a full pack (e.g. antibiotics, injections).
-        </p>
+      <div className="mt-4 space-y-3 border-t border-navy-100 pt-3">
+        <div>
+          <Toggle label={`Allow retail / partial sales (single ${base})`} checked={allowLoose} onChange={onAllowLoose} />
+          <p className="mt-1 text-xs text-navy-400">
+            Turn off for medicines that must be sold in a full pack (e.g. antibiotics, injections).
+          </p>
+        </div>
+        <div>
+          <Toggle label="Allow wholesale sales (full packs)" checked={allowWholesale} onChange={(v) => onAllowWholesale?.(v)} />
+          <p className="mt-1 text-xs text-navy-400">
+            When off, this medicine is hidden from the POS wholesale mode.
+          </p>
+        </div>
       </div>
     </div>
   );

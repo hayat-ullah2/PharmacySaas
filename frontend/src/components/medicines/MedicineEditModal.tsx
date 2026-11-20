@@ -154,9 +154,11 @@ export function MedicineEditModal({
           productType={form.productType ?? ""}
           packUnits={form.packUnits ?? []}
           allowLoose={form.allowLoose !== false}
+          allowWholesale={form.allowWholesale !== false}
           onProductType={(v) => upd({ productType: v })}
           onPackUnits={(v) => upd({ packUnits: v })}
           onAllowLoose={(v) => upd({ allowLoose: v })}
+          onAllowWholesale={(v) => upd({ allowWholesale: v })}
         />
         <Textarea label="Description" rows={3} value={form.description ?? ""} onChange={(e) => upd({ description: e.target.value })} />
       </div>

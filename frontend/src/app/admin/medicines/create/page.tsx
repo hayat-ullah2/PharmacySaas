@@ -36,6 +36,7 @@ export default function CreateMedicinePage() {
   const [productType, setProductType] = useState("");
   const [packUnits, setPackUnits] = useState<MedicineUnit[]>([]);
   const [allowLoose, setAllowLoose] = useState(true);
+  const [allowWholesale, setAllowWholesale] = useState(true);
   // Controlled so a quick-added brand/category/etc. can be auto-selected.
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
@@ -116,6 +117,7 @@ export default function CreateMedicinePage() {
         productType: productType || undefined,
         packUnits: cleanPacks.length ? cleanPacks : undefined,
         allowLoose,
+        allowWholesale,
       });
       toast({ type: "success", title: "Medicine created", description: "The medicine is now available to managers in this pharmacy." });
       router.push("/admin/medicines");
@@ -215,9 +217,11 @@ export default function CreateMedicinePage() {
                 productType={productType}
                 packUnits={packUnits}
                 allowLoose={allowLoose}
+                allowWholesale={allowWholesale}
                 onProductType={setProductType}
                 onPackUnits={setPackUnits}
                 onAllowLoose={setAllowLoose}
+                onAllowWholesale={setAllowWholesale}
               />
             </CardBody>
           </Card>

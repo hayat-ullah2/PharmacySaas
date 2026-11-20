@@ -46,7 +46,8 @@ export interface Medicine {
   // --- Multi-unit packaging (optional; absent = single-unit product) ---
   productType?: string; // e.g. Tablet, Syrup, Injection — for guidance only
   packUnits?: MedicineUnit[]; // larger packs (factor > 1): Strip, Box, Carton…
-  allowLoose?: boolean; // can the base unit be sold singly? (default true)
+  allowLoose?: boolean; // retail / partial: can the base unit be sold singly? (default true)
+  allowWholesale?: boolean; // can it be sold in wholesale mode (full packs)? (default true)
 }
 
 export interface Category {

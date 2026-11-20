@@ -21,6 +21,7 @@ export default function ManagerStorePage() {
   const products = useMemo(() => {
     let list = MEDICINES.filter((m) => {
       if (m.archived) return false; // archived medicines are not sellable
+      if (saleType === "wholesale" && m.allowWholesale === false) return false; // not for wholesale
       const q = search.toLowerCase();
       const matchSearch = !q || m.name.toLowerCase().includes(q) || m.genericName.toLowerCase().includes(q);
       const matchCat = category === "All" || m.category === category;
@@ -31,7 +32,7 @@ export default function ManagerStorePage() {
     else if (sort === "price-high") list = [...list].sort((a, b) => b.sellingPrice - a.sellingPrice);
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [search, category, sort, rxOnly]);
+  }, [search, category, sort, rxOnly, saleType]);
 
   return (
     <div>
