@@ -66,6 +66,12 @@ export default function CartPage() {
                 units.push({ name: item.unit, factor: item.factor, price: item.price });
               }
               const baseName = med?.unit ?? item.unit;
+              // Units of THIS medicine still available for this line (mirrors updateQty's cap).
+              const usedByOthers = items.reduce(
+                (s, i) => (i.medicineId === item.medicineId && i.key !== item.key ? s + i.quantity * i.factor : s),
+                0,
+              );
+              const available = Math.max(0, Math.floor((item.stock - usedByOthers) / Math.max(1, item.factor)));
               return (
               <div key={item.key} className="flex items-center gap-3 rounded-xl border border-navy-100 p-3">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-300">
@@ -96,6 +102,9 @@ export default function CartPage() {
                   ) : (
                     <p className="mt-0.5 text-xs font-medium text-primary-600">Per {item.unit}</p>
                   )}
+                  <p className="mt-0.5 text-[11px] font-medium text-navy-400">
+                    {available} {item.unit}{available === 1 ? "" : "s"} available
+                  </p>
                   <p className="mt-0.5 text-sm font-semibold text-navy-700 sm:hidden">{formatRs(item.price)}</p>
                 </div>
 
@@ -109,7 +118,17 @@ export default function CartPage() {
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
-                  <span className="w-8 text-center text-sm font-semibold text-navy-900">{item.quantity}</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    aria-label={`Quantity in ${item.unit}`}
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
+                      updateQty(item.key, Number.isFinite(n) ? n : 1);
+                    }}
+                    className="w-10 border-0 bg-transparent text-center text-sm font-semibold text-navy-900 focus:outline-none"
+                  />
                   <button
                     onClick={() => updateQty(item.key, item.quantity + 1)}
                     aria-label="Increase"
