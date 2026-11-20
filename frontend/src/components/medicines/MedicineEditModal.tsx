@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
 import { MEDICINES, CATEGORIES, BRANDS, MANUFACTURERS, SUPPLIERS } from "@/lib/data";
-import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, splitStrength, combineStrength } from "@/lib/medicineOptions";
-import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
+import { MEDICINE_UNITS as UNITS, STRENGTH_UNITS, splitStrength, combineStrength } from "@/lib/medicineOptions";
 import { validatePackUnits, resolvePackUnits } from "@/lib/units";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { useToast } from "@/lib/toast";
@@ -134,13 +133,11 @@ export function MedicineEditModal({
           <Select label="Brand" value={form.brand} onChange={(e) => upd({ brand: e.target.value })} placeholder="Select brand" options={BRANDS.map((b) => ({ value: b.name, label: b.name }))} />
           <Select label="Manufacturer" value={form.manufacturer} onChange={(e) => upd({ manufacturer: e.target.value })} placeholder="Select manufacturer" options={MANUFACTURERS.map((m) => ({ value: m.name, label: m.name }))} />
           <Select label="Supplier" value={form.supplier ?? ""} onChange={(e) => upd({ supplier: e.target.value || undefined })} placeholder="Select supplier" options={SUPPLIERS.map((sp) => ({ value: sp.name, label: sp.name }))} />
-          <div className="sm:col-span-2"><DosageVsUnitHint /></div>
-          <Select label="Dosage form" value={form.dosageForm} onChange={(e) => upd({ dosageForm: e.target.value })} placeholder="Select form" hint="The physical form — what the medicine is (e.g. Tablet, Syrup)." options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))} />
+          <Select label="Unit" value={form.unit} onChange={(e) => upd({ unit: e.target.value, dosageForm: e.target.value })} placeholder="Select unit" hint="The piece you stock & sell — build Box/Strip in Packaging." options={unitOptions} />
           <div className="grid grid-cols-2 gap-3">
             <Input label="Strength" value={strengthValue} inputMode="decimal" placeholder="e.g. 500" onChange={(e) => setStrengthValue(e.target.value)} />
             <Select label="Strength Unit" value={strengthUnit} onChange={(e) => setStrengthUnit(e.target.value)} placeholder="mg / ml" options={strengthUnitOptions} />
           </div>
-          <Select label="Unit" value={form.unit} onChange={(e) => upd({ unit: e.target.value })} placeholder="Select unit" hint="The smallest piece you stock & sell — build Box/Strip in Packaging." options={unitOptions} />
           <Input label={`Selling price per ${form.unit || "base unit"} (Rs)`} hint={`Price for ONE ${form.unit || "base unit"}.`} type="number" min={0} step="0.01" value={form.sellingPrice} onChange={(e) => upd({ sellingPrice: Number(e.target.value) })} />
           <Input label={`Purchase price per ${form.unit || "base unit"} (Rs)`} type="number" min={0} step="0.01" value={form.purchasePrice} onChange={(e) => upd({ purchasePrice: Number(e.target.value) })} />
           <Input label={`Printed MRP per ${form.unit || "base unit"} (Rs)`} type="number" min={0} step="0.01" value={form.mrp ?? ""} onChange={(e) => upd({ mrp: e.target.value === "" ? undefined : Number(e.target.value) })} />

@@ -12,10 +12,9 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PackagingEditor } from "@/components/medicines/PackagingEditor";
-import { DosageVsUnitHint } from "@/components/medicines/DosageVsUnitHint";
 import { QuickAddEntityModal, type EntityKind } from "@/components/entities/QuickAddEntityModal";
 import { CATEGORIES, BRANDS, MANUFACTURERS, SUPPLIERS } from "@/lib/data";
-import { DOSAGE_FORMS, MEDICINE_UNITS as UNITS, STRENGTH_UNITS, combineStrength, suggestBaseUnit } from "@/lib/medicineOptions";
+import { MEDICINE_UNITS as UNITS, STRENGTH_UNITS, combineStrength } from "@/lib/medicineOptions";
 import { validatePackUnits, resolvePackUnits } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { usePharmacyData } from "@/lib/pharmacyData";
@@ -29,9 +28,7 @@ export default function CreateMedicinePage() {
   const [image, setImage] = useState("");
   const [saving, setSaving] = useState(false);
   // Controlled so the packaging editor can show the live base unit + price.
-  const [dosageForm, setDosageForm] = useState("");
   const [unit, setUnit] = useState("");
-  const [unitTouched, setUnitTouched] = useState(false);
   const [sellingPriceStr, setSellingPriceStr] = useState("");
   const [productType, setProductType] = useState("");
   const [packUnits, setPackUnits] = useState<MedicineUnit[]>([]);
@@ -97,7 +94,7 @@ export default function CreateMedicinePage() {
         category: String(values.get("category") ?? ""),
         brand: String(values.get("brand") ?? ""),
         manufacturer: String(values.get("manufacturer") ?? ""),
-        dosageForm: String(values.get("dosageForm") ?? ""),
+        dosageForm: unit,
         strength: combineStrength(String(values.get("strengthValue") ?? ""), String(values.get("strengthUnit") ?? "")),
         strengthUnit: String(values.get("strengthUnit") ?? "") || undefined,
         unit: String(values.get("unit") ?? ""),
@@ -167,29 +164,12 @@ export default function CreateMedicinePage() {
           </Card>
 
           <Card>
-            <CardHeader title="Formulation" subtitle="Dosage form and strength" />
-            <CardBody className="space-y-4">
-              <DosageVsUnitHint />
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Select
-                  name="dosageForm"
-                  label="Dosage Form"
-                  placeholder="Select form"
-                  hint="The physical form — what the medicine is (e.g. Tablet, Syrup)."
-                  options={DOSAGE_FORMS.map((d) => ({ value: d, label: d }))}
-                  value={dosageForm}
-                  onChange={(e) => {
-                    setDosageForm(e.target.value);
-                    // Auto-fill the base Unit from the form, until the user sets it themselves.
-                    if (!unitTouched) {
-                      const suggested = suggestBaseUnit(e.target.value);
-                      if (suggested) setUnit(suggested);
-                    }
-                  }}
-                />
+            <CardHeader title="Formulation" subtitle="Unit and strength" />
+            <CardBody>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Select name="unit" label="Unit" placeholder="Select unit" hint="The piece you stock & sell: Tablet, Capsule, Bottle, Tube, Vial…" options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
                 <Input name="strengthValue" label="Strength" placeholder="e.g. 500" inputMode="decimal" />
                 <Select name="strengthUnit" label="Strength Unit" placeholder="mg / ml" hint="The dose unit (mg, ml) — not the packaging." options={STRENGTH_UNITS.map((u) => ({ value: u, label: u }))} />
-                <Select name="unit" label="Unit" placeholder="Select unit" hint="Auto-set from the dosage form — the smallest piece you stock & sell." options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => { setUnit(e.target.value); setUnitTouched(true); }} />
               </div>
             </CardBody>
           </Card>
