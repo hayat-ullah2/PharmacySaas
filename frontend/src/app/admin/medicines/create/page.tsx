@@ -197,9 +197,9 @@ export default function CreateMedicinePage() {
           <Card>
             <CardHeader title="Pricing & Stock" subtitle="Pricing and reorder configuration" />
             <CardBody className="grid gap-4 sm:grid-cols-2">
-              <Input name="sellingPrice" label="Selling Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required value={sellingPriceStr} onChange={(e) => setSellingPriceStr(e.target.value)} hint="What you charge per base unit." />
-              <Input name="mrp" label="MRP / Printed Price (Rs)" type="number" placeholder="0" min={0} step="0.01" hint="Price printed on the pack (reference)." />
-              <Input name="purchasePrice" label="Purchase Price (Rs)" type="number" placeholder="0" min={0} step="0.01" required />
+              <Input name="sellingPrice" label={`Selling Price per ${unit || "base unit"} (Rs)`} type="number" placeholder="0" min={0} step="0.01" required value={sellingPriceStr} onChange={(e) => setSellingPriceStr(e.target.value)} hint={`Price for ONE ${unit || "base unit"} — not a strip or pack.`} />
+              <Input name="mrp" label={`Printed MRP per ${unit || "base unit"} (Rs)`} type="number" placeholder="0" min={0} step="0.01" hint="Printed on the pack (reference only)." />
+              <Input name="purchasePrice" label={`Purchase Price per ${unit || "base unit"} (Rs)`} type="number" placeholder="0" min={0} step="0.01" required hint="Your cost for one base unit." />
               <Input name="reorderLevel" label="Reorder Level" type="number" placeholder="e.g. 30" min={0} required />
               <Input name="stock" label="Opening Stock" type="number" placeholder="0" min={0} required />
               <Input name="batchNumber" label="Batch Number (optional)" placeholder="Auto if blank" />

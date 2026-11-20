@@ -141,9 +141,9 @@ export function MedicineEditModal({
             <Select label="Strength Unit" value={strengthUnit} onChange={(e) => setStrengthUnit(e.target.value)} placeholder="mg / ml" options={strengthUnitOptions} />
           </div>
           <Select label="Unit" value={form.unit} onChange={(e) => upd({ unit: e.target.value })} placeholder="Select unit" hint="The smallest piece you stock & sell — build Box/Strip in Packaging." options={unitOptions} />
-          <Input label="Selling price (Rs)" type="number" min={0} step="0.01" value={form.sellingPrice} onChange={(e) => upd({ sellingPrice: Number(e.target.value) })} />
-          <Input label="Purchase price (Rs)" type="number" min={0} step="0.01" value={form.purchasePrice} onChange={(e) => upd({ purchasePrice: Number(e.target.value) })} />
-          <Input label="MRP / Printed price (Rs)" type="number" min={0} step="0.01" value={form.mrp ?? ""} onChange={(e) => upd({ mrp: e.target.value === "" ? undefined : Number(e.target.value) })} />
+          <Input label={`Selling price per ${form.unit || "base unit"} (Rs)`} hint={`Price for ONE ${form.unit || "base unit"}.`} type="number" min={0} step="0.01" value={form.sellingPrice} onChange={(e) => upd({ sellingPrice: Number(e.target.value) })} />
+          <Input label={`Purchase price per ${form.unit || "base unit"} (Rs)`} type="number" min={0} step="0.01" value={form.purchasePrice} onChange={(e) => upd({ purchasePrice: Number(e.target.value) })} />
+          <Input label={`Printed MRP per ${form.unit || "base unit"} (Rs)`} type="number" min={0} step="0.01" value={form.mrp ?? ""} onChange={(e) => upd({ mrp: e.target.value === "" ? undefined : Number(e.target.value) })} />
           <Input label="Reorder level" type="number" min={0} value={form.reorderLevel} onChange={(e) => upd({ reorderLevel: Number(e.target.value) })} />
           <Input label="SKU / Barcode" value={form.sku ?? ""} onChange={(e) => upd({ sku: e.target.value })} />
         </div>

@@ -89,8 +89,9 @@ export function PackagingEditor({
       </div>
 
       <p className="mt-1 text-xs text-navy-500">
-        Inventory is counted in <span className="font-medium text-navy-700">{base}</span> (the base unit, {formatRs(basePrice)} loose).
-        Build larger packs from the base unit or a smaller pack — e.g. 1 Box = 10 Strip, 1 Strip = 10 {base}.
+        Inventory is counted in <span className="font-medium text-navy-700">{base}</span>. Each level has its OWN selling
+        price. Build a pack from the base unit or a smaller pack — e.g. 1 Strip = 10 {base} @ Rs 100, then
+        1 Carton = 100 Strip @ Rs 10,000.
       </p>
 
       <div className="mt-3 sm:max-w-xs">
@@ -103,10 +104,10 @@ export function PackagingEditor({
         />
       </div>
 
-      {/* Base unit row (read-only) */}
+      {/* Base unit row (read-only — its price comes from "Selling Price per base unit") */}
       <div className="mt-4 flex items-center gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm">
         <span className="font-medium text-navy-800">{base}</span>
-        <span className="text-xs text-navy-400">base unit · 1 {base}</span>
+        <span className="text-xs text-navy-400">base unit · selling price per 1 {base}</span>
         <span className="ml-auto font-semibold text-navy-900">{formatRs(basePrice)}</span>
       </div>
 
@@ -137,7 +138,7 @@ export function PackagingEditor({
               options={ofOptions(i)}
             />
             <Input
-              label={i === 0 ? "Price (Rs)" : undefined}
+              label={i === 0 ? `Sell price / ${p.name || "pack"}` : undefined}
               type="number"
               min={0}
               step="0.01"
@@ -153,20 +154,34 @@ export function PackagingEditor({
       </div>
 
       <button type="button" onClick={addPack} className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700">
-        <Plus className="h-4 w-4" /> Add pack
+        <Plus className="h-4 w-4" /> Add another package
       </button>
 
-      {/* Live preview — resolves the nesting down to base units */}
-      {packUnits.some((p) => (p.name ?? "").trim() && p.factor > 1) && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {packUnits.filter((p) => (p.name ?? "").trim() && p.factor > 1).map((p, i) => (
-            <span key={i} className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
-              1 {p.name.trim()} = {p.contains ?? p.factor} {ofLabel(p)}
-              {ofLabel(p) !== base ? ` = ${p.factor} ${base}` : ""}
-            </span>
-          ))}
-        </div>
-      )}
+      {/* Live packaging summary — every level, its conversion, and its own price */}
+      {(() => {
+        const levels = packUnits.filter((p) => (p.name ?? "").trim() && p.factor > 1).sort((a, b) => a.factor - b.factor);
+        if (levels.length === 0) return null;
+        return (
+          <div className="mt-4 rounded-lg border border-primary-100 bg-primary-50/40 p-3">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary-700">Packaging summary</p>
+            <ul className="space-y-1 text-sm">
+              <li className="flex items-baseline justify-between gap-3">
+                <span className="text-navy-600">1 {base} <span className="text-navy-400">(base)</span></span>
+                <span className="font-semibold text-navy-900">{formatRs(basePrice)}</span>
+              </li>
+              {levels.map((p, i) => (
+                <li key={i} className="flex items-baseline justify-between gap-3">
+                  <span className="text-navy-600">
+                    1 {p.name.trim()} = {p.contains ?? p.factor} {ofLabel(p)}
+                    {ofLabel(p) !== base ? ` = ${p.factor} ${base}` : ""}
+                  </span>
+                  <span className="font-semibold text-navy-900">{formatRs(p.price)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
 
       <div className="mt-4 space-y-3 border-t border-navy-100 pt-3">
         <div>
