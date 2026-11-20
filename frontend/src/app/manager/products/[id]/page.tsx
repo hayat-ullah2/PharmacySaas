@@ -15,7 +15,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MEDICINES, BATCHES } from "@/lib/data";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
-import { sellableUnits, baseUnit } from "@/lib/units";
+import { sellableUnits, baseUnit, unitPriceLabel } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import type { Batch } from "@/lib/types";
 
@@ -144,7 +144,7 @@ export default function ProductDetailPage() {
                     label="Sell by unit"
                     value={selectedUnit.name}
                     onChange={(e) => { setUnitName(e.target.value); setQty(1); }}
-                    options={units.map((u) => ({ value: u.name, label: `${u.name} — ${formatRs(u.price)}${u.factor > 1 ? ` (${u.factor} ${medicine.unit})` : ""}` }))}
+                    options={units.map((u) => ({ value: u.name, label: unitPriceLabel(u, medicine.unit) }))}
                   />
                 </div>
               )}

@@ -1,4 +1,22 @@
 import type { Medicine, MedicineUnit } from "./types";
+import { formatRs } from "./utils";
+
+/** Per-base-unit equivalent price (may be fractional, e.g. Rs 9.5) — up to 2 dp, no trailing zeros. */
+function perUnitRs(n: number): string {
+  return `Rs ${n.toLocaleString("en-PK", { maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * Dropdown label for a sellable unit: its own price, plus (for packs) how many
+ * base units it holds AND the per-base-unit equivalent price.
+ * e.g. "Carton — Rs 10,000 (1000 Tablet · Rs 10/Tablet)".
+ */
+export function unitPriceLabel(u: MedicineUnit, baseName: string): string {
+  if (u.factor > 1) {
+    return `${u.name} — ${formatRs(u.price)} (${u.factor} ${baseName} · ${perUnitRs(u.price / u.factor)}/${baseName})`;
+  }
+  return `${u.name} — ${formatRs(u.price)}`;
+}
 
 // Product types (guidance only — drives sensible packaging defaults in the UI).
 export const PRODUCT_TYPES = [

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Pill, Plus, ShieldAlert, Check } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
-import { sellableUnits, baseUnit } from "@/lib/units";
+import { sellableUnits, baseUnit, unitPriceLabel } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { Badge } from "@/components/ui/Badge";
 import { formatRs, cn } from "@/lib/utils";
@@ -87,7 +87,7 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
           >
             {units.map((u) => (
               <option key={u.name} value={u.name}>
-                {u.name} — {formatRs(u.price)}{u.factor > 1 ? ` (${u.factor} ${medicine.unit})` : ""}
+                {unitPriceLabel(u, medicine.unit)}
               </option>
             ))}
           </select>

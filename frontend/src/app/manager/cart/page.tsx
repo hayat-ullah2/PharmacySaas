@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/States";
 import { useCart } from "@/lib/cart";
 import { MEDICINES } from "@/lib/data";
-import { sellableUnits } from "@/lib/units";
+import { sellableUnits, unitPriceLabel } from "@/lib/units";
 import { formatRs } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 
@@ -95,7 +95,7 @@ export default function CartPage() {
                         }}
                         options={units.map((u) => ({
                           value: u.name,
-                          label: u.factor > 1 ? `${u.name} — ${formatRs(u.price)} (${u.factor} ${baseName})` : `${u.name} — ${formatRs(u.price)}`,
+                          label: unitPriceLabel(u, baseName),
                         }))}
                       />
                     </div>
