@@ -77,13 +77,18 @@ export function MedicineEditModal({
       toast({ type: "warning", title: "Already exists", description: `A medicine named "${[trimmedName, strength].filter(Boolean).join(" ")}" already exists.` });
       return;
     }
+    // Only rows that actually have a pack name count — a blank/default row is ignored.
     const packs = resolvePackUnits(
-      (form.packUnits ?? []).filter((p) => p.name.trim() || p.factor || p.price),
+      (form.packUnits ?? []).filter((p) => p.name.trim()),
       form.unit,
     );
     const packError = validatePackUnits(packs, form.unit);
     if (packError) {
       toast({ type: "warning", title: "Check packaging", description: packError });
+      return;
+    }
+    if (form.allowLoose === false && packs.length === 0) {
+      toast({ type: "warning", title: "Can't be sold", description: "Turn ON retail / partial sales, or add at least one pack." });
       return;
     }
 

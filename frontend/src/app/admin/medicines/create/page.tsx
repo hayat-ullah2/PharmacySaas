@@ -68,12 +68,16 @@ export default function CreateMedicinePage() {
       }
       if (!expiry) throw new Error("Enter the nearest expiry date for this medicine.");
 
+      // Only rows that actually have a pack name count — a blank/default row is ignored.
       const cleanPacks = resolvePackUnits(
-        packUnits.filter((p) => p.name.trim() || p.factor || p.price),
+        packUnits.filter((p) => p.name.trim()),
         String(values.get("unit") ?? ""),
       );
       const packError = validatePackUnits(cleanPacks, String(values.get("unit") ?? ""));
       if (packError) throw new Error(packError);
+      if (!allowLoose && cleanPacks.length === 0) {
+        throw new Error("This medicine can't be sold: turn ON “Allow retail / partial sales”, or add at least one pack.");
+      }
 
       const today = new Date();
       const daysUntilExpiry = Math.ceil((new Date(`${expiry}T00:00:00`).getTime() - today.getTime()) / 86_400_000);
