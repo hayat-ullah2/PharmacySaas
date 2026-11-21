@@ -53,6 +53,22 @@ export function sellableUnits(m: UnitSource): MedicineUnit[] {
   return list.sort((a, b) => b.factor - a.factor);
 }
 
+/**
+ * Units offered in the POS for a sale mode.
+ * - retail: all sellable units (packs + loose base) at retail prices.
+ * - wholesale: ONLY packs that have a wholesale price, charged at that price
+ *   (never retail). Base/loose and packs without a wholesale price are excluded.
+ */
+export function posUnits(m: UnitSource, saleType: "retail" | "wholesale"): MedicineUnit[] {
+  if (saleType === "wholesale") {
+    return (m.packUnits ?? [])
+      .filter((u) => u && u.factor > 1 && (u.wholesalePrice ?? 0) > 0)
+      .map((u) => ({ ...u, price: u.wholesalePrice as number }))
+      .sort((a, b) => b.factor - a.factor);
+  }
+  return sellableUnits(m);
+}
+
 /** Is this a multi-unit product (has at least one pack configured)? */
 export function isMultiUnit(m: UnitSource): boolean {
   return (m.packUnits ?? []).some((u) => u && u.factor > 1);

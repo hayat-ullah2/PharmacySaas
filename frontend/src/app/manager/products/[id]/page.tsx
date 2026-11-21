@@ -15,13 +15,13 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MEDICINES, BATCHES } from "@/lib/data";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
-import { sellableUnits, baseUnit, unitPriceLabel } from "@/lib/units";
+import { posUnits, baseUnit, unitPriceLabel } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import type { Batch } from "@/lib/types";
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
-  const { addItem } = useCart();
+  const { addItem, saleType } = useCart();
   const { toast } = useToast();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -46,7 +46,7 @@ export default function ProductDetailPage() {
 
   const batches = BATCHES.filter((b) => b.medicineId === medicine.id);
   const outOfStock = medicine.stock <= 0;
-  const units = sellableUnits(medicine);
+  const units = posUnits(medicine, saleType);
   const selectedUnit = units.find((u) => u.name === unitName) ?? units[units.length - 1] ?? baseUnit(medicine);
   const maxQty = Math.max(1, Math.floor(medicine.stock / selectedUnit.factor));
 

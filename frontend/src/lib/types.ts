@@ -148,7 +148,9 @@ export type SaleStatus = "paid" | "pending" | "refunded" | "partial";
 export interface MedicineUnit {
   name: string;
   factor: number; // how many BASE units one of this unit contains (base unit = 1)
-  price: number; // selling price for ONE of this unit (may be non-proportional)
+  price: number; // RETAIL selling price for ONE of this unit (may be non-proportional)
+  wholesalePrice?: number; // WHOLESALE price per pack (independent of retail; packs only)
+  minWholesaleQty?: number; // optional minimum quantity for a wholesale sale of this pack
   // Nested packaging (editor-facing): "1 {name} = {contains} {of}". `factor` is
   // always the resolved base-unit count and remains the source of truth used by
   // purchases / batches / POS / returns. When absent, `contains = factor`, `of = base`.

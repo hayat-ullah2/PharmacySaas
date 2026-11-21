@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Pill, Plus, ShieldAlert, Check } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
-import { sellableUnits, baseUnit, unitPriceLabel } from "@/lib/units";
+import { posUnits, baseUnit, unitPriceLabel } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { Badge } from "@/components/ui/Badge";
 import { formatRs, cn } from "@/lib/utils";
@@ -14,12 +14,14 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
   const { addItem, saleType } = useCart();
   const { toast } = useToast();
   const [added, setAdded] = useState(false);
-  const outOfStock = medicine.stock <= 0;
+  // Units offered depend on the sale mode. Wholesale = packs with a wholesale
+  // price (charged at wholesale); retail = all sellable units at retail.
+  const units = posUnits(medicine, saleType);
+  const noWholesale = saleType === "wholesale" && units.length === 0;
+  const outOfStock = medicine.stock <= 0 || noWholesale;
   const lowStock = medicine.stock > 0 && medicine.stock <= medicine.reorderLevel;
 
-  // Cashier picks the selling unit before adding; price + stock follow the unit.
   // Wholesale defaults to the largest pack (box/carton); retail to the smallest.
-  const units = sellableUnits(medicine);
   const defaultUnit = (saleType === "wholesale" ? units[0] : units[units.length - 1]) ?? baseUnit(medicine);
   const [sel, setSel] = useState<MedicineUnit>(defaultUnit);
   // Re-default the unit when the selling mode flips (adjust state during render).
@@ -97,7 +99,7 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
           <div>
             <p className="text-base font-bold text-navy-900">{formatRs(sel.price)}</p>
             <p className={cn("text-[11px]", outOfStock ? "text-danger-500" : lowStock ? "text-warning-600" : "text-navy-400")}>
-              {outOfStock ? "0 in stock" : `${maxOfSel} ${sel.name}${maxOfSel === 1 ? "" : "s"} in stock`}
+              {noWholesale ? "No wholesale price set" : outOfStock ? "0 in stock" : `${maxOfSel} ${sel.name}${maxOfSel === 1 ? "" : "s"} in stock`}
             </p>
           </div>
           <button

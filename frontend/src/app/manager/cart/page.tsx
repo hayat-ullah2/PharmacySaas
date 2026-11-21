@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/States";
 import { useCart } from "@/lib/cart";
 import { MEDICINES } from "@/lib/data";
-import { sellableUnits, unitPriceLabel } from "@/lib/units";
+import { posUnits, unitPriceLabel } from "@/lib/units";
 import { formatRs } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 
@@ -60,7 +60,7 @@ export default function CartPage() {
           <CardBody className="space-y-3">
             {items.map((item) => {
               const med = MEDICINES.find((m) => m.id === item.medicineId);
-              const units = med ? sellableUnits(med) : [];
+              const units = med ? posUnits(med, saleType) : [];
               // Keep the current unit selectable even if packaging changed since adding.
               if (!units.some((u) => u.name === item.unit)) {
                 units.push({ name: item.unit, factor: item.factor, price: item.price });

@@ -89,9 +89,10 @@ export function PackagingEditor({
       </div>
 
       <p className="mt-1 text-xs text-navy-500">
-        Inventory is counted in <span className="font-medium text-navy-700">{base}</span>. Each level has its OWN selling
-        price. Build a pack from the base unit or a smaller pack — e.g. 1 Strip = 10 {base} @ Rs 100, then
-        1 Carton = 100 Strip @ Rs 10,000.
+        The base unit <span className="font-medium text-navy-700">{base}</span> and its price are set above in
+        <span className="font-medium text-navy-700"> Pricing &amp; Stock</span>. Here you add larger packs — each with
+        its own <span className="font-medium text-navy-700">Retail</span> and <span className="font-medium text-navy-700">Wholesale</span> price.
+        e.g. 1 Strip = 10 {base}, 1 Carton = 100 Strip.
       </p>
 
       <div className="mt-3 sm:max-w-xs">
@@ -104,51 +105,28 @@ export function PackagingEditor({
         />
       </div>
 
-      {/* Base unit row (read-only — its price comes from "Selling Price per base unit") */}
-      <div className="mt-4 flex items-center gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm">
-        <span className="font-medium text-navy-800">{base}</span>
-        <span className="text-xs text-navy-400">base unit · selling price per 1 {base}</span>
-        <span className="ml-auto font-semibold text-navy-900">{formatRs(basePrice)}</span>
-      </div>
-
-      {/* Pack rows: 1 {name} = {contains} {of} @ {price} */}
-      <div className="mt-2 space-y-2">
+      {/* Pack cards: hierarchy (name/contains/of) + its own retail & wholesale prices */}
+      <div className="mt-3 space-y-2">
         {packUnits.map((p, i) => (
-          <div key={i} className="grid grid-cols-[1.1fr_0.7fr_1fr_0.8fr_auto] items-end gap-2">
-            <Select
-              label={i === 0 ? "Pack name" : undefined}
-              placeholder="Name"
-              value={p.name}
-              onChange={(e) => updatePack(i, { name: e.target.value })}
-              options={nameOptions(p.name)}
-            />
-            <Input
-              label={i === 0 ? "Contains" : undefined}
-              type="number"
-              min={2}
-              step={1}
-              placeholder="10"
-              value={p.contains ?? p.factor ?? ""}
-              onChange={(e) => updatePack(i, { contains: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
-            />
-            <Select
-              label={i === 0 ? "of" : undefined}
-              value={p.of ?? ""}
-              onChange={(e) => updatePack(i, { of: e.target.value })}
-              options={ofOptions(i)}
-            />
-            <Input
-              label={i === 0 ? `Sell price / ${p.name || "pack"}` : undefined}
-              type="number"
-              min={0}
-              step="0.01"
-              placeholder="0"
-              value={p.price || ""}
-              onChange={(e) => updatePack(i, { price: Number(e.target.value) || 0 })}
-            />
-            <button type="button" onClick={() => removePack(i)} aria-label="Remove pack" className="mb-1 flex h-10 w-9 items-center justify-center rounded-lg text-navy-400 hover:bg-danger-50 hover:text-danger-600">
-              <Trash2 className="h-4 w-4" />
-            </button>
+          <div key={i} className="rounded-lg border border-navy-100 p-3">
+            <div className="grid grid-cols-[1.2fr_0.7fr_1fr_auto] items-end gap-2">
+              <Select label="Pack name" placeholder="Select pack" value={p.name} onChange={(e) => updatePack(i, { name: e.target.value })} options={nameOptions(p.name)} />
+              <Input label="Contains" type="number" min={2} step={1} placeholder="10" value={p.contains ?? p.factor ?? ""} onChange={(e) => updatePack(i, { contains: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
+              <Select label="of" value={p.of ?? ""} onChange={(e) => updatePack(i, { of: e.target.value })} options={ofOptions(i)} />
+              <button type="button" onClick={() => removePack(i)} aria-label="Remove pack" className="mb-1 flex h-10 w-9 items-center justify-center rounded-lg text-navy-400 hover:bg-danger-50 hover:text-danger-600">
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              <Input label="Retail price (Rs)" type="number" min={0} step="0.01" placeholder="0" value={p.price || ""} onChange={(e) => updatePack(i, { price: Number(e.target.value) || 0 })} />
+              <Input label="Wholesale price (Rs)" type="number" min={0} step="0.01" placeholder="0" value={p.wholesalePrice ?? ""} onChange={(e) => updatePack(i, { wholesalePrice: e.target.value === "" ? undefined : Number(e.target.value) || 0 })} />
+              <Input label="Min wholesale qty" type="number" min={1} step={1} placeholder="optional" value={p.minWholesaleQty ?? ""} onChange={(e) => updatePack(i, { minWholesaleQty: e.target.value === "" ? undefined : Math.max(1, Math.floor(Number(e.target.value) || 0)) })} />
+            </div>
+            {(p.name ?? "").trim() && p.factor > 1 ? (
+              <p className="mt-1.5 text-[11px] text-primary-600">
+                1 {p.name.trim()} = {p.contains ?? p.factor} {ofLabel(p)}{ofLabel(p) !== base ? ` = ${p.factor} ${base}` : ""}
+              </p>
+            ) : null}
           </div>
         ))}
       </div>
@@ -157,7 +135,7 @@ export function PackagingEditor({
         <Plus className="h-4 w-4" /> Add another package
       </button>
 
-      {/* Live packaging summary — every level, its conversion, and its own price */}
+      {/* Live packaging summary — conversion + retail/wholesale price per level */}
       {(() => {
         const levels = packUnits.filter((p) => (p.name ?? "").trim() && p.factor > 1).sort((a, b) => a.factor - b.factor);
         if (levels.length === 0) return null;
@@ -166,7 +144,7 @@ export function PackagingEditor({
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary-700">Packaging summary</p>
             <ul className="space-y-1 text-sm">
               <li className="flex items-baseline justify-between gap-3">
-                <span className="text-navy-600">1 {base} <span className="text-navy-400">(base)</span></span>
+                <span className="text-navy-600">1 {base} <span className="text-navy-400">(base · retail)</span></span>
                 <span className="font-semibold text-navy-900">{formatRs(basePrice)}</span>
               </li>
               {levels.map((p, i) => (
@@ -175,7 +153,11 @@ export function PackagingEditor({
                     1 {p.name.trim()} = {p.contains ?? p.factor} {ofLabel(p)}
                     {ofLabel(p) !== base ? ` = ${p.factor} ${base}` : ""}
                   </span>
-                  <span className="font-semibold text-navy-900">{formatRs(p.price)}</span>
+                  <span className="shrink-0 font-semibold text-navy-900">
+                    {formatRs(p.price)}
+                    <span className="font-normal text-navy-400"> retail</span>
+                    {(p.wholesalePrice ?? 0) > 0 ? <> · {formatRs(p.wholesalePrice!)}<span className="font-normal text-navy-400"> wholesale</span></> : <span className="font-normal text-warning-600"> · no wholesale price</span>}
+                  </span>
                 </li>
               ))}
             </ul>

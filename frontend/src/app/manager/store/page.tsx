@@ -10,9 +10,22 @@ import { EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { MEDICINES, STORE_CATEGORIES } from "@/lib/data";
 import { useCart } from "@/lib/cart";
+import { posUnits } from "@/lib/units";
+import { useToast } from "@/lib/toast";
+import type { SaleType } from "@/lib/types";
 
 export default function ManagerStorePage() {
   const { totals, saleType, setSaleType } = useCart();
+  const { toast } = useToast();
+  // Keep a sale single-mode: don't let the cashier flip retail/wholesale with items in the cart.
+  const switchMode = (m: SaleType) => {
+    if (m === saleType) return;
+    if (totals.count > 0) {
+      toast({ type: "warning", title: "Finish the current sale first", description: "Clear the cart to switch between retail and wholesale pricing." });
+      return;
+    }
+    setSaleType(m);
+  };
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("popular");
@@ -21,7 +34,8 @@ export default function ManagerStorePage() {
   const products = useMemo(() => {
     let list = MEDICINES.filter((m) => {
       if (m.archived) return false; // archived medicines are not sellable
-      if (saleType === "wholesale" && m.allowWholesale === false) return false; // not for wholesale
+      // In wholesale mode, only show medicines allowed for wholesale AND with a wholesale-priced pack.
+      if (saleType === "wholesale" && (m.allowWholesale === false || posUnits(m, "wholesale").length === 0)) return false;
       const q = search.toLowerCase();
       const matchSearch = !q || m.name.toLowerCase().includes(q) || m.genericName.toLowerCase().includes(q);
       const matchCat = category === "All" || m.category === category;
@@ -56,7 +70,7 @@ export default function ManagerStorePage() {
               <button
                 key={m}
                 type="button"
-                onClick={() => setSaleType(m)}
+                onClick={() => switchMode(m)}
                 className={
                   "rounded-md px-3 py-1.5 capitalize transition " +
                   (saleType === m ? "bg-white text-primary-700 shadow-sm" : "text-white/90 hover:bg-white/10")

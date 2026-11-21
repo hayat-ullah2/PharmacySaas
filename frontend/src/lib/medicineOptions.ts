@@ -30,17 +30,16 @@ export const DOSAGE_FORMS = [
  * These are COUNTABLE packaging units only — strength units like mg/ml live in
  * STRENGTH_UNITS and must not appear here.
  */
+// Base unit = the SMALLEST sellable piece only. Packs (Strip/Box/Pack/Carton)
+// belong in PACK_UNIT_NAMES, not here.
 export const MEDICINE_UNITS = [
   "Tablet",
   "Capsule",
-  "Strip",
   "Bottle",
   "Vial",
   "Ampoule",
   "Tube",
   "Sachet",
-  "Box",
-  "Pack",
   "Inhaler",
   "Suppository",
   "Patch",
@@ -76,17 +75,13 @@ export function suggestBaseUnit(dosageForm: string): string {
   return DOSAGE_BASE_UNIT[dosageForm] ?? "";
 }
 
-/** Common names for a larger pack (what you group base units into). */
+/** Names for a larger PACK only (what you group base units into) — never a base unit. */
 export const PACK_UNIT_NAMES = [
   "Strip",
   "Box",
   "Pack",
   "Carton",
   "Sachet",
-  "Bottle",
-  "Tube",
-  "Vial",
-  "Ampoule",
   "Jar",
 ];
 
