@@ -112,6 +112,11 @@ export default function CheckoutPage() {
     const customerName = customer ? (CUSTOMERS.find((c) => c.id === customer)?.name ?? "Customer") : "Walk-in Customer";
     const ok = printThermalReceipt({
       pharmacyName: user?.pharmacyName ?? "Pharmacy",
+      pharmacyLogo: user?.pharmacyLogo || undefined,
+      pharmacyAddress: user?.pharmacyAddress || undefined,
+      pharmacyPhone: user?.pharmacyPhone || undefined,
+      pharmacyLicense: user?.pharmacyLicense || undefined,
+      pharmacyTaxId: user?.pharmacyTaxId || undefined,
       invoice: invoiceNo,
       cashier: user?.name ?? "Cashier",
       customer: customerName,
