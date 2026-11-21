@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   CheckCircle2,
   Pill,
+  Printer,
   ArrowLeft,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -25,7 +26,9 @@ import { EmptyState } from "@/components/ui/States";
 import { useCart } from "@/lib/cart";
 import { CUSTOMERS, PRESCRIPTIONS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
+import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
+import { printThermalReceipt } from "@/lib/receipt";
 import { formatRs, cn } from "@/lib/utils";
 import type { PaymentMethod } from "@/lib/types";
 
@@ -40,6 +43,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, totals, clear, saleType } = useCart();
   const { completeSale, saveRecord, lastSale, clearLastSale } = usePharmacyData();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [customer, setCustomer] = useState("");
   const [payment, setPayment] = useState<PaymentMethod>("cash");
@@ -102,6 +106,27 @@ export default function CheckoutPage() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const printReceipt = () => {
+    const customerName = customer ? (CUSTOMERS.find((c) => c.id === customer)?.name ?? "Customer") : "Walk-in Customer";
+    const ok = printThermalReceipt({
+      pharmacyName: user?.pharmacyName ?? "Pharmacy",
+      invoice: invoiceNo,
+      cashier: user?.name ?? "Cashier",
+      customer: customerName,
+      saleType,
+      payment,
+      items,
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      tax: totals.tax,
+      total: totals.total,
+      paid: amountPaid,
+      change,
+      outstanding,
+    });
+    if (!ok) toast({ type: "warning", title: "Pop-up blocked", description: "Allow pop-ups for this site to print the receipt." });
   };
 
   return (
@@ -308,19 +333,25 @@ export default function CheckoutPage() {
           )}
 
           <div className="mt-6 flex w-full flex-col gap-2">
-            <Button
-              className="w-full"
-              onClick={() => { clearLastSale(); clear(); router.push("/manager/sales"); }}
-            >
-              View Invoice
+            <Button className="w-full" onClick={printReceipt}>
+              <Printer className="h-4 w-4" /> Print Receipt
             </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => { clearLastSale(); clear(); router.push("/manager/store"); }}
-            >
-              <Pill className="h-4 w-4" /> New Sale
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => { clearLastSale(); clear(); router.push("/manager/sales"); }}
+              >
+                View Invoice
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => { clearLastSale(); clear(); router.push("/manager/store"); }}
+              >
+                <Pill className="h-4 w-4" /> New Sale
+              </Button>
+            </div>
           </div>
         </div>
       </Modal>
