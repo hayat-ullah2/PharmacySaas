@@ -67,6 +67,7 @@ export default function CreateMedicinePage() {
         throw new Error("MRP / printed price must be a valid non-negative number.");
       }
       if (!expiry) throw new Error("Enter the nearest expiry date for this medicine.");
+      if (!String(values.get("unit") ?? "").trim()) throw new Error("Select a base Unit (Tablet, Bottle, Vial…).");
 
       // Only rows that actually have a pack name count — a blank/default row is ignored.
       const cleanPacks = resolvePackUnits(
@@ -171,9 +172,9 @@ export default function CreateMedicinePage() {
             <CardHeader title="Formulation" subtitle="Unit and strength" />
             <CardBody>
               <div className="grid gap-4 sm:grid-cols-3">
-                <Select name="unit" label="Unit" placeholder="Select unit" hint="The piece you stock & sell: Tablet, Capsule, Bottle, Tube, Vial…" options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
+                <Select name="unit" label="Unit" required placeholder="Select unit" hint="The piece you stock & sell: Tablet, Capsule, Bottle, Tube, Vial…" options={UNITS.map((u) => ({ value: u, label: u }))} value={unit} onChange={(e) => setUnit(e.target.value)} />
                 <Input name="strengthValue" label="Strength" placeholder="e.g. 500" inputMode="decimal" />
-                <Select name="strengthUnit" label="Strength Unit" placeholder="mg / ml" hint="The dose unit (mg, ml) — not the packaging." options={STRENGTH_UNITS.map((u) => ({ value: u, label: u }))} />
+                <Select name="strengthUnit" label="Strength Unit" placeholder="Select unit" hint="The dose unit (mg, ml) — not the packaging." options={STRENGTH_UNITS.map((u) => ({ value: u, label: u }))} />
               </div>
             </CardBody>
           </Card>

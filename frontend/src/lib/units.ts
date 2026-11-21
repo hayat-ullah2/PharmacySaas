@@ -121,6 +121,32 @@ export function formatPackaging(baseQty: number, m: Pick<Medicine, "unit" | "pac
 }
 
 /**
+ * Which pack names pack[i] may be built "of" — every OTHER named pack that does
+ * NOT (transitively) depend on pack[i]. Excluding dependents prevents circular
+ * packaging (e.g. you can't pick "Strip of Box" while "Box of Strip" exists).
+ */
+export function allowedOfNames(packs: MedicineUnit[], i: number): string[] {
+  const self = (packs[i]?.name ?? "").trim().toLowerCase();
+  const dependsOn = (name: string, target: string, seen: Set<string>): boolean => {
+    const p = packs.find((x) => (x.name ?? "").trim().toLowerCase() === name);
+    const of = (p?.of ?? "").trim().toLowerCase();
+    if (!of) return false; // built from the base unit
+    if (of === target) return true;
+    if (seen.has(of)) return false;
+    seen.add(of);
+    return dependsOn(of, target, seen);
+  };
+  return packs
+    .filter((p, idx) => {
+      if (idx === i) return false; // not itself
+      const name = (p.name ?? "").trim();
+      if (!name) return false;
+      return !(self && dependsOn(name.toLowerCase(), self, new Set()));
+    })
+    .map((p) => p.name.trim());
+}
+
+/**
  * Resolve each pack's base-unit `factor` from its nested definition
  * ("1 {name} = {contains} {of}"), where `of` is the base unit or another pack.
  * Legacy packs (no contains/of) are treated as `contains = factor`, `of = base`.

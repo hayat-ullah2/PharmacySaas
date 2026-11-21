@@ -5,7 +5,7 @@ import { Plus, Trash2, Layers, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
-import { PRODUCT_TYPES, resolvePackUnits } from "@/lib/units";
+import { PRODUCT_TYPES, resolvePackUnits, allowedOfNames } from "@/lib/units";
 import { PACK_UNIT_NAMES } from "@/lib/medicineOptions";
 import { formatRs } from "@/lib/utils";
 import type { MedicineUnit } from "@/lib/types";
@@ -56,12 +56,11 @@ export function PackagingEditor({
     if (current && !names.some((n) => n.toLowerCase() === current.toLowerCase())) names.unshift(current);
     return names.map((n) => ({ value: n, label: n }));
   };
-  // What a pack can be built from: the base unit, or any OTHER named pack.
+  // What a pack can be built from: the base unit, or a SMALLER pack that doesn't
+  // depend on this one (prevents circular packaging).
   const ofOptions = (i: number) => [
     { value: "", label: `${base} (base)` },
-    ...packUnits
-      .filter((p, idx) => idx !== i && (p.name ?? "").trim())
-      .map((p) => ({ value: p.name.trim(), label: p.name.trim() })),
+    ...allowedOfNames(packUnits, i).map((n) => ({ value: n, label: n })),
   ];
   const ofLabel = (p: MedicineUnit) => ((p.of ?? "").trim() ? p.of!.trim() : base);
 
