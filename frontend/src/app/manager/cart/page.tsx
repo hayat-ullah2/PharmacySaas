@@ -72,6 +72,10 @@ export default function CartPage() {
                 0,
               );
               const available = Math.max(0, Math.floor((item.stock - usedByOthers) / Math.max(1, item.factor)));
+              // Only offer units we can make at least 1 of from the remaining stock
+              // (a Carton needs 1000 base units). Always keep the current unit listed.
+              const baseAvail = Math.max(0, item.stock - usedByOthers);
+              const unitOptions = units.filter((u) => u.name === item.unit || Math.floor(baseAvail / Math.max(1, u.factor)) >= 1);
               return (
               <div key={item.key} className="flex items-center gap-3 rounded-xl border border-navy-100 p-3">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-300">
@@ -93,7 +97,7 @@ export default function CartPage() {
                           const u = units.find((x) => x.name === e.target.value);
                           if (u) changeUnit(item.key, u);
                         }}
-                        options={units.map((u) => ({
+                        options={unitOptions.map((u) => ({
                           value: u.name,
                           label: unitPriceLabel(u, baseName),
                         }))}

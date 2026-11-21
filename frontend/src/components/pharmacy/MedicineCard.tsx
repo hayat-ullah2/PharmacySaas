@@ -16,9 +16,11 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
   const [added, setAdded] = useState(false);
   // Units offered depend on the sale mode. Wholesale = packs with a wholesale
   // price (charged at wholesale); retail = all sellable units at retail.
-  const units = posUnits(medicine, saleType);
-  const noWholesale = saleType === "wholesale" && units.length === 0;
-  const outOfStock = medicine.stock <= 0 || noWholesale;
+  const modeUnits = posUnits(medicine, saleType);
+  // Only offer units we can make at least 1 of from current stock (a Carton needs 1000).
+  const units = modeUnits.filter((u) => Math.floor(medicine.stock / Math.max(1, u.factor)) >= 1);
+  const noWholesale = saleType === "wholesale" && modeUnits.length === 0;
+  const outOfStock = medicine.stock <= 0 || noWholesale || units.length === 0;
   const lowStock = medicine.stock > 0 && medicine.stock <= medicine.reorderLevel;
 
   // Wholesale defaults to the largest pack (box/carton); retail to the smallest.
