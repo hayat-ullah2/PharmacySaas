@@ -105,12 +105,13 @@ export function buildThermalReceiptHtml(d: ThermalReceipt, widthMm?: number): st
 </body></html>`;
 }
 
-/** Open the thermal receipt in a print window and trigger the print dialog. */
-export function printThermalReceipt(d: ThermalReceipt): boolean {
+/** Open the thermal receipt in a print window and trigger the print dialog.
+ * Fixed to an 80mm page so the print preview + output match the standard roll. */
+export function printThermalReceipt(d: ThermalReceipt, widthMm = 80): boolean {
   const w = window.open("", "_blank", "width=380,height=640");
   if (!w) return false; // popup blocked
   w.document.open();
-  w.document.write(buildThermalReceiptHtml(d));
+  w.document.write(buildThermalReceiptHtml(d, widthMm));
   w.document.close();
   return true;
 }
