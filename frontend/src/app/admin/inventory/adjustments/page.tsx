@@ -15,7 +15,7 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { MEDICINES, ADJUSTMENTS } from "@/lib/data";
-import { usePharmacyData } from "@/lib/pharmacyData";
+import { usePharmacyData, useLazyEntity } from "@/lib/pharmacyData";
 import { formatDate, paginate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { StockAdjustment } from "@/lib/types";
@@ -23,6 +23,7 @@ import type { StockAdjustment } from "@/lib/types";
 const PER_PAGE = 8;
 
 export default function AdjustmentsPage() {
+  useLazyEntity("adjustments");
   const { toast } = useToast();
   const { adjustStock } = usePharmacyData();
   const [search, setSearch] = useState("");

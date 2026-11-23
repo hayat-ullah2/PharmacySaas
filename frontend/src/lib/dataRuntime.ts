@@ -19,6 +19,11 @@ export function setLiveRecords(records: LiveRecords | null) {
   liveRecords = records;
 }
 
+/** Merge a partial set of entities into the live cache (targeted refetch). */
+export function patchLiveRecords(partial: LiveRecords) {
+  liveRecords = { ...(liveRecords ?? {}), ...partial };
+}
+
 export function getLiveRecords<T>(entity: string, fallback: T[]): T[] {
   if (!liveRecords) return fallback;
   const values = liveRecords[entity] ?? [];

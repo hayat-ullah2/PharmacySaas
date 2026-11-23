@@ -30,7 +30,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
 import { SUPPLIERS, PURCHASES, PAYMENTS } from "@/lib/data";
-import { usePharmacyData } from "@/lib/pharmacyData";
+import { usePharmacyData, useLazyEntity } from "@/lib/pharmacyData";
 import { isValidPakistaniPhone, sanitizePhoneInput } from "@/lib/phone";
 import { isValidEmail } from "@/lib/validators";
 import { formatRs, formatDate, initials } from "@/lib/utils";
@@ -63,6 +63,7 @@ const TABS = [
 ];
 
 export default function SupplierDetailPage() {
+  useLazyEntity("payments");
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();

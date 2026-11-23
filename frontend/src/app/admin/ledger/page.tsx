@@ -1,4 +1,5 @@
 "use client";
+import { useLazyEntity } from "@/lib/pharmacyData";
 
 import { useMemo } from "react";
 import { Wallet, ArrowDownToLine, HandCoins, Users, ScrollText } from "lucide-react";
@@ -20,6 +21,7 @@ interface CashierRow {
 }
 
 export default function OwnerLedgerPage() {
+  useLazyEntity("cash_ledger");
   // Per-cashier reconciliation: cash collected (their cash sales) vs deposited.
   const rows = useMemo<CashierRow[]>(() => {
     const names = new Map<string, string>();

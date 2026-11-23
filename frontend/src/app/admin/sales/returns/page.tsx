@@ -13,12 +13,13 @@ import { SearchBar } from "@/components/tables/SearchBar";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
 import { SALES, SALES_RETURNS } from "@/lib/data";
-import { usePharmacyData } from "@/lib/pharmacyData";
+import { usePharmacyData, useLazyEntity } from "@/lib/pharmacyData";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { SalesReturn } from "@/lib/types";
 
 export default function SalesReturnsPage() {
+  useLazyEntity("sales_returns");
   const { toast } = useToast();
   const { recordSaleReturn } = usePharmacyData();
   const [search, setSearch] = useState("");

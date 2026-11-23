@@ -1,4 +1,5 @@
 "use client";
+import { useLazyEntity } from "@/lib/pharmacyData";
 
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
@@ -52,6 +53,7 @@ const TABS = [
 ];
 
 export default function CustomerDetailPage() {
+  useLazyEntity("payments");
   const params = useParams<{ id: string }>();
   const customer = CUSTOMERS.find((c) => c.id === params.id);
 

@@ -1,4 +1,5 @@
 "use client";
+import { useLazyEntity } from "@/lib/pharmacyData";
 
 import { useMemo, useState } from "react";
 import { ScrollText, Download } from "lucide-react";
@@ -32,6 +33,7 @@ const actionTone: Record<string, BadgeTone> = {
 const userColor = (name: string) => USERS.find((u) => u.name === name)?.avatarColor ?? "#64748b";
 
 export default function AuditLogsPage() {
+  useLazyEntity("audit_logs");
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [action, setAction] = useState("");

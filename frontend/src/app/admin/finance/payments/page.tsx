@@ -16,7 +16,7 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/States";
 import { PAYMENTS } from "@/lib/data";
-import { usePharmacyData } from "@/lib/pharmacyData";
+import { usePharmacyData, useLazyEntity } from "@/lib/pharmacyData";
 import { formatRs, formatDate, paginate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { Payment, PaymentMethod } from "@/lib/types";
@@ -24,6 +24,7 @@ import type { Payment, PaymentMethod } from "@/lib/types";
 const PER_PAGE = 8;
 
 export default function PaymentsPage() {
+  useLazyEntity("payments");
   const { toast } = useToast();
   const { saveRecord } = usePharmacyData();
   const [search, setSearch] = useState("");

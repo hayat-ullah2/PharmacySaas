@@ -13,12 +13,13 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
 import { SALES, CASH_LEDGER } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
-import { usePharmacyData } from "@/lib/pharmacyData";
+import { usePharmacyData, useLazyEntity } from "@/lib/pharmacyData";
 import { formatRs, formatDate } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { CashLedgerEntry } from "@/lib/types";
 
 export default function ManagerLedgerPage() {
+  useLazyEntity("cash_ledger");
   const { user } = useAuth();
   const { recordCashDeposit } = usePharmacyData();
   const { toast } = useToast();
