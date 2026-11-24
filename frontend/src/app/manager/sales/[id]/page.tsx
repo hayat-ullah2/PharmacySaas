@@ -109,6 +109,8 @@ export default function ManagerSaleDetailPage() {
               <dd className="text-right font-medium text-navy-800">{formatDate(sale.date)}</dd>
               <dt className="text-navy-400">Customer</dt>
               <dd className="text-right font-medium text-navy-800">{sale.customer}</dd>
+              <dt className="text-navy-400">Cashier</dt>
+              <dd className="text-right font-medium text-navy-800">{sale.cashierName || "—"}</dd>
               <dt className="text-navy-400">Payment</dt>
               <dd className="text-right font-medium text-navy-800">{capitalize(sale.payment)}</dd>
               <dt className="text-navy-400">Status</dt>
@@ -162,11 +164,22 @@ export default function ManagerSaleDetailPage() {
                 <span className="font-semibold text-navy-900">Total</span>
                 <span className="font-bold text-navy-900">{formatRs(sale.total)}</span>
               </div>
+              <div className="flex justify-between text-navy-500">
+                <span>Paid ({capitalize(sale.payment)})</span>
+                <span className="font-medium text-navy-800">{formatRs(sale.amountPaid ?? sale.total)}</span>
+              </div>
+              {(sale.outstanding ?? 0) > 0 && (
+                <div className="flex justify-between">
+                  <span className="font-medium text-warning-700">Balance due</span>
+                  <span className="font-semibold text-warning-700">{formatRs(sale.outstanding ?? 0)}</span>
+                </div>
+              )}
             </div>
 
             <p className="mt-8 border-t border-dashed border-navy-200 pt-5 text-center text-xs text-navy-400">
               Thank you for shopping at {pharmacyName}. Get well soon!
             </p>
+            <p className="mt-1 text-center text-[11px] text-navy-300">Powered by MediCare</p>
           </CardBody>
         </Card>
       </div>

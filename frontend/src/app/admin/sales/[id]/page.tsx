@@ -10,10 +10,17 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
 import { SALES, CUSTOMERS } from "@/lib/data";
+import { useAuth } from "@/lib/auth";
 import { formatRs, formatDate } from "@/lib/utils";
+import { cldThumb } from "@/lib/img";
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default function SaleDetailPage() {
   const params = useParams<{ id: string }>();
+  const { user } = useAuth();
   const sale = SALES.find((s) => s.id === params.id);
 
   if (!sale) {
@@ -44,6 +51,11 @@ export default function SaleDetailPage() {
   }
 
   const customer = CUSTOMERS.find((c) => c.name === sale.customer);
+  // Pharmacy identity for the invoice header — tenant-specific, from the signed-in
+  // pharmacy profile (never hardcoded).
+  const pharmacyName = user?.pharmacyName?.trim() || "Pharmacy";
+  const pharmacyAddress = user?.pharmacyAddress?.trim();
+  const pharmacyPhone = user?.pharmacyPhone?.trim();
 
   return (
     <div>
@@ -80,13 +92,18 @@ export default function SaleDetailPage() {
           {/* Invoice header */}
           <div className="flex flex-col justify-between gap-4 border-b border-navy-100 pb-6 sm:flex-row sm:items-start">
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-600 text-white">
-                <Pill className="h-6 w-6" />
+              <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-primary-600 text-white">
+                {user?.pharmacyLogo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={cldThumb(user.pharmacyLogo, { w: 96, h: 96 })} alt={pharmacyName} decoding="async" className="h-full w-full object-cover" />
+                ) : (
+                  <Pill className="h-6 w-6" />
+                )}
               </span>
               <div>
-                <p className="text-lg font-bold text-navy-900">MediCare Pharmacy</p>
-                <p className="text-xs text-navy-500">Shahrah-e-Faisal, Karachi, Pakistan</p>
-                <p className="text-xs text-navy-500">+92 21 111 000 111 · billing@medicare.pk</p>
+                <p className="text-lg font-bold text-navy-900">{pharmacyName}</p>
+                {pharmacyAddress && <p className="text-xs text-navy-500">{pharmacyAddress}</p>}
+                {pharmacyPhone && <p className="text-xs text-navy-500">{pharmacyPhone}</p>}
               </div>
             </div>
             <div className="sm:text-right">
@@ -116,6 +133,8 @@ export default function SaleDetailPage() {
             <div className="sm:text-right">
               <p className="text-xs font-semibold uppercase tracking-wide text-navy-400">Payment Method</p>
               <p className="mt-1.5 text-sm font-semibold capitalize text-navy-900">{sale.payment}</p>
+              <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Cashier</p>
+              <p className="mt-1.5 text-sm font-semibold text-navy-900">{sale.cashierName || "—"}</p>
               <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Items</p>
               <p className="mt-1.5 text-sm font-semibold text-navy-900">{sale.itemCount} unit(s)</p>
             </div>
@@ -169,12 +188,23 @@ export default function SaleDetailPage() {
                 <dt className="text-base font-semibold text-navy-900">Total</dt>
                 <dd className="text-base font-bold text-navy-900">{formatRs(sale.total)}</dd>
               </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-navy-500">Paid ({capitalize(sale.payment)})</dt>
+                <dd className="font-medium text-navy-800">{formatRs(sale.amountPaid ?? sale.total)}</dd>
+              </div>
+              {(sale.outstanding ?? 0) > 0 && (
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-warning-700">Balance due</dt>
+                  <dd className="font-semibold text-warning-700">{formatRs(sale.outstanding ?? 0)}</dd>
+                </div>
+              )}
             </dl>
           </div>
 
           <p className="border-t border-navy-100 pt-4 text-center text-xs text-navy-400">
-            Thank you for choosing MediCare Pharmacy. This is a computer-generated invoice.
+            Thank you for choosing {pharmacyName}. This is a computer-generated invoice.
           </p>
+          <p className="mt-1 text-center text-[11px] text-navy-300">Powered by MediCare</p>
         </CardBody>
       </Card>
     </div>
