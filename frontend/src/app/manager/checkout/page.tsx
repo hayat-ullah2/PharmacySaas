@@ -28,7 +28,7 @@ import { CUSTOMERS, PRESCRIPTIONS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
-import { printThermalReceipt } from "@/lib/receipt";
+import { printThermalReceipt, type ReceiptWidth } from "@/lib/receipt";
 import { formatRs, cn } from "@/lib/utils";
 import type { PaymentMethod } from "@/lib/types";
 
@@ -51,6 +51,15 @@ export default function CheckoutPage() {
   const [discountMode, setDiscountMode] = useState<"rs" | "pct">("rs");
   const [discountInput, setDiscountInput] = useState("");
   const [processing, setProcessing] = useState(false);
+  // Thermal roll width (58mm or 80mm), remembered per browser for this printer.
+  const [paperWidth, setPaperWidth] = useState<ReceiptWidth>(() => {
+    if (typeof window === "undefined") return 80;
+    return localStorage.getItem("medicare.receiptWidth") === "58" ? 58 : 80;
+  });
+  const choosePaperWidth = (w: ReceiptWidth) => {
+    setPaperWidth(w);
+    try { localStorage.setItem("medicare.receiptWidth", String(w)); } catch { /* optional */ }
+  };
   const [prescriptionId, setPrescriptionId] = useState("");
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -145,7 +154,7 @@ export default function CheckoutPage() {
       paid: amountPaid,
       change,
       outstanding,
-    });
+    }, paperWidth);
     if (!ok) toast({ type: "warning", title: "Pop-up blocked", description: "Allow pop-ups for this site to print the receipt." });
   };
 
@@ -400,6 +409,24 @@ export default function CheckoutPage() {
           )}
 
           <div className="mt-6 flex w-full flex-col gap-2">
+            <div className="flex items-center justify-center gap-2 text-xs text-navy-500">
+              <span>Paper:</span>
+              <div className="inline-flex rounded-lg border border-navy-200 bg-navy-50 p-0.5">
+                {([58, 80] as const).map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => choosePaperWidth(w)}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 font-medium transition",
+                      paperWidth === w ? "bg-white text-navy-900 shadow-sm" : "text-navy-500 hover:text-navy-700",
+                    )}
+                  >
+                    {w}mm
+                  </button>
+                ))}
+              </div>
+            </div>
             <Button className="w-full" onClick={printReceipt}>
               <Printer className="h-4 w-4" /> Print Receipt
             </Button>

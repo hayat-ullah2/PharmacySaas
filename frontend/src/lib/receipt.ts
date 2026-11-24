@@ -53,9 +53,14 @@ export function receiptInnerHtml(d: ThermalReceipt): string {
     ["Customer", d.customer],
   ].map(([k, v]) => `<div class="row meta"><span>${esc(k)}</span><span class="r">${esc(v)}</span></div>`).join("");
 
+  // A labelled 2-column header (Item · Amount) so the item rows read as clean
+  // columns at any width, then one block per item: name on its own line, then
+  // "qty unit × unitPrice" (secondary, may wrap) left + the line amount right.
+  // The amount column is tabular + nowrap, so prices never wrap or collide.
+  const itemsHeader = `<div class="row ih"><span>Item</span><span class="r">Amount</span></div>`;
   const items = d.items.map((i) => {
     const name = `${i.name}${i.strength ? ` ${i.strength}` : ""}`;
-    return `<div class="it"><div class="nm">${esc(name)}</div><div class="ln"><span class="q">${i.quantity} ${esc(i.unit)} x ${money(i.price)}</span><span class="amt">${money(i.price * i.quantity)}</span></div></div>`;
+    return `<div class="it"><div class="nm">${esc(name)}</div><div class="ln"><span class="q">${i.quantity} ${esc(i.unit)} × ${money(i.price)}</span><span class="amt">${money(i.price * i.quantity)}</span></div></div>`;
   }).join("");
 
   const totals = [
@@ -68,7 +73,7 @@ export function receiptInnerHtml(d: ThermalReceipt): string {
     d.outstanding > 0 ? `<div class="row meta b"><span>Balance due</span><span class="r">${money(d.outstanding)}</span></div>` : "",
   ].join("");
 
-  return `${header}<div class="hr"></div>${meta}<div class="hr"></div>${items}<div class="hr"></div>${totals}<div class="hr"></div><div class="c foot">Thank you for your purchase!</div><div class="c foot dim">Powered by MediCare</div>`;
+  return `${header}<div class="hr"></div>${meta}<div class="hr"></div>${itemsHeader}${items}<div class="hr"></div>${totals}<div class="hr"></div><div class="c foot">Thank you for your purchase!</div><div class="c foot dim">Powered by MediCare</div>`;
 }
 
 /** Thermal receipt CSS. Fluid by default so it fills the printer's paper (58 or 80mm). */
@@ -83,15 +88,24 @@ export const RECEIPT_CSS = `
   .b { font-weight: 700; }
   .dim { color: #555; }
   .hr { border-top: 1px dashed #000; margin: 5px 0; }
-  .row { display: flex; justify-content: space-between; gap: 8px; }
-  .row .r { text-align: right; white-space: nowrap; }
-  .it { margin: 2px 0; }
+  /* Money columns are tabular + nowrap so amounts never wrap or collide. */
+  .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .row .r { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ih { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+  .it { margin: 3px 0; }
   .it .nm { font-weight: 700; }
-  .it .ln { display: flex; justify-content: space-between; gap: 8px; }
-  .it .ln .q { flex: 1 1 auto; }
-  .it .ln .amt { text-align: right; white-space: nowrap; }
+  /* Detail line: "qty unit × price" may shrink/wrap (secondary); amount stays put. */
+  .it .ln { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 12px; }
+  .it .ln .q { flex: 1 1 auto; min-width: 0; color: #222; }
+  .it .ln .amt { flex: 0 0 auto; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .tot { font-size: 16px; font-weight: 800; margin-top: 2px; }
   .foot { font-size: 10px; }
+  /* 58mm roll: tighten everything so a full line fits without wrapping. */
+  .narrow { padding: 1.5mm 2mm; font-size: 11px; }
+  .narrow .name { font-size: 15px; }
+  .narrow .sub, .narrow .meta, .narrow .ih { font-size: 10px; }
+  .narrow .it .ln { font-size: 10px; gap: 5px; }
+  .narrow .tot { font-size: 14px; }
 `;
 
 /** Full print document. `widthMm` fixes the page width (58/80) for preview; omit for fluid printing. */
@@ -99,15 +113,20 @@ export function buildThermalReceiptHtml(d: ThermalReceipt, widthMm?: number): st
   const pageCss = widthMm
     ? `@page { size: ${widthMm}mm auto; margin: 0; } body { width: ${widthMm}mm; }`
     : `@page { margin: 0; }`;
+  // 58mm rolls get the compact "narrow" variant so lines fit without wrapping.
+  const bodyClass = widthMm && widthMm <= 60 ? ' class="narrow"' : "";
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(d.invoice)}</title>
-<style>${pageCss}${RECEIPT_CSS}</style></head><body>${receiptInnerHtml(d)}
+<style>${pageCss}${RECEIPT_CSS}</style></head><body${bodyClass}>${receiptInnerHtml(d)}
 <script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script>
 </body></html>`;
 }
 
+/** Supported thermal roll widths (mm). */
+export type ReceiptWidth = 58 | 80;
+
 /** Open the thermal receipt in a print window and trigger the print dialog.
- * Fixed to an 80mm page so the print preview + output match the standard roll. */
-export function printThermalReceipt(d: ThermalReceipt, widthMm = 80): boolean {
+ * `widthMm` selects the paper roll (58mm or 80mm); defaults to the 80mm standard. */
+export function printThermalReceipt(d: ThermalReceipt, widthMm: ReceiptWidth = 80): boolean {
   const w = window.open("", "_blank", "width=380,height=640");
   if (!w) return false; // popup blocked
   w.document.open();
