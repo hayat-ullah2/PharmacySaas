@@ -8,6 +8,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/States";
+import { ThermalPrintButton } from "@/components/sales/ThermalPrintButton";
 import { SALES } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { formatRs, formatDate } from "@/lib/utils";
@@ -61,11 +62,12 @@ export default function ManagerSaleDetailPage() {
           ]}
           actions={
             <>
+              <ThermalPrintButton sale={sale} />
               <Button
                 variant="outline"
                 onClick={() => window.print()}
               >
-                <Printer className="h-4 w-4" /> Print Receipt
+                <Printer className="h-4 w-4" /> Print / PDF
               </Button>
               <Link href="/manager/store">
                 <Button>

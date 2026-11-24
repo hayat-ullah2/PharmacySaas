@@ -1,6 +1,6 @@
 "use client";
 
-import type { CartItem } from "./types";
+import type { CartItem, Sale } from "./types";
 
 export interface ThermalReceipt {
   // Pharmacy identity (tenant-specific, from the pharmacies profile/settings).
@@ -123,6 +123,58 @@ export function buildThermalReceiptHtml(d: ThermalReceipt, widthMm?: number): st
 
 /** Supported thermal roll widths (mm). */
 export type ReceiptWidth = 58 | 80;
+
+/** Pharmacy identity for a receipt (from the signed-in tenant profile). */
+export interface ReceiptPharmacy {
+  name?: string;
+  logo?: string;
+  address?: string;
+  phone?: string;
+  license?: string;
+  taxId?: string;
+}
+
+/**
+ * Build a thermal receipt from a STORED sale — used to reprint an invoice on the
+ * roll printer, a faithful copy of the original. `medicineName` already includes
+ * the strength (the server concatenates it), so `strength` is left blank here.
+ * Sales created before change-tracking simply have change = 0 (no Change line).
+ */
+export function thermalReceiptFromSale(sale: Sale, pharmacy: ReceiptPharmacy): ThermalReceipt {
+  return {
+    pharmacyName: pharmacy.name || "Pharmacy",
+    pharmacyLogo: pharmacy.logo || undefined,
+    pharmacyAddress: pharmacy.address || undefined,
+    pharmacyPhone: pharmacy.phone || undefined,
+    pharmacyLicense: pharmacy.license || undefined,
+    pharmacyTaxId: pharmacy.taxId || undefined,
+    invoice: sale.invoice,
+    cashier: sale.cashierName || "Cashier",
+    customer: sale.customer,
+    saleType: sale.saleType === "wholesale" ? "wholesale" : "retail",
+    payment: sale.payment,
+    items: sale.items.map((it, idx): CartItem => ({
+      key: `${it.medicineId ?? idx}__${it.unit ?? ""}`,
+      medicineId: it.medicineId ?? "",
+      name: it.medicineName,
+      genericName: "",
+      strength: "",
+      unit: it.unit ?? "",
+      factor: it.factor ?? 1,
+      price: it.price,
+      quantity: it.quantity,
+      stock: 0,
+      prescriptionRequired: false,
+    })),
+    subtotal: sale.subtotal,
+    discount: sale.discount,
+    tax: sale.tax,
+    total: sale.total,
+    paid: sale.amountPaid ?? sale.total,
+    change: sale.change ?? 0,
+    outstanding: sale.outstanding ?? 0,
+  };
+}
 
 /** Open the thermal receipt in a print window and trigger the print dialog.
  * `widthMm` selects the paper roll (58mm or 80mm); defaults to the 80mm standard. */

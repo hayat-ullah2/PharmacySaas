@@ -2,13 +2,14 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Printer, Download, Receipt, Pill } from "lucide-react";
+import { ArrowLeft, Download, Receipt, Pill } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
+import { ThermalPrintButton } from "@/components/sales/ThermalPrintButton";
 import { SALES, CUSTOMERS } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { formatRs, formatDate } from "@/lib/utils";
@@ -72,12 +73,7 @@ export default function SaleDetailPage() {
             <Link href="/admin/sales">
               <Button variant="ghost"><ArrowLeft className="h-4 w-4" /> Back</Button>
             </Link>
-            <Button
-              variant="outline"
-              onClick={() => window.print()}
-            >
-              <Printer className="h-4 w-4" /> Print
-            </Button>
+            <ThermalPrintButton sale={sale} />
             <Button
               onClick={() => window.print()}
             >
