@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Pill, X } from "lucide-react";
 import type { NavSection } from "@/lib/nav";
 import { useAuth } from "@/lib/auth";
+import { cldThumb } from "@/lib/img";
 import { cn } from "@/lib/utils";
 
 function isActive(pathname: string, href: string) {
@@ -51,7 +52,7 @@ export function Sidebar({
             <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-600 text-white shadow-sm">
               {user?.pharmacyLogo ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.pharmacyLogo} alt={brandName} className="h-full w-full object-cover" />
+                <img src={cldThumb(user.pharmacyLogo, { w: 96, h: 96 })} alt={brandName} decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <Pill className="h-5 w-5" />
               )}

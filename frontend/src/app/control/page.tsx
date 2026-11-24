@@ -28,6 +28,7 @@ import { EmptyState } from "@/components/ui/States";
 import { PharmacyEditModal } from "@/components/control/PharmacyEditModal";
 import { PharmacyDeleteModal } from "@/components/control/PharmacyDeleteModal";
 import { formatDate, formatRs } from "@/lib/utils";
+import { cldThumb } from "@/lib/img";
 
 interface PharmacyRow {
   id: string;
@@ -291,7 +292,7 @@ export default function ControlDashboard() {
                           <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5">
                             {p.logo_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.logo_url} alt={p.name} className="h-full w-full object-cover" />
+                              <img src={cldThumb(p.logo_url, { w: 96, h: 96 })} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                             ) : (
                               <Building2 className="h-4 w-4 text-navy-400" />
                             )}

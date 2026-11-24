@@ -22,6 +22,7 @@ import { MEDICINES, CATEGORIES, BRANDS } from "@/lib/data";
 import { usePharmacyData } from "@/lib/pharmacyData";
 import { formatRs, formatDate, paginate } from "@/lib/utils";
 import { exportMedicinesXlsx } from "@/lib/medicineXlsx";
+import { cldThumb } from "@/lib/img";
 import { useToast } from "@/lib/toast";
 import type { Medicine } from "@/lib/types";
 
@@ -83,7 +84,7 @@ export default function MedicinesPage() {
         <div className="flex items-center gap-3">
           {m.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={m.image} alt={m.name} className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+            <img src={cldThumb(m.image, { w: 96, h: 96 })} alt={m.name} loading="lazy" decoding="async" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
           ) : (
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
               <Pill className="h-4 w-4" />

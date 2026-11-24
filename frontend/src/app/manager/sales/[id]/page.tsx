@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/States";
 import { SALES } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { formatRs, formatDate } from "@/lib/utils";
+import { cldThumb } from "@/lib/img";
 
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -90,7 +91,7 @@ export default function ManagerSaleDetailPage() {
               <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-primary-600 text-white">
                 {user?.pharmacyLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.pharmacyLogo} alt={pharmacyName} className="h-full w-full object-cover" />
+                  <img src={cldThumb(user.pharmacyLogo, { w: 96, h: 96 })} alt={pharmacyName} decoding="async" className="h-full w-full object-cover" />
                 ) : (
                   <Pill className="h-6 w-6" />
                 )}

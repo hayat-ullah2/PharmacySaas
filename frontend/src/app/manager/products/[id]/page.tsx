@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/States";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MEDICINES, BATCHES } from "@/lib/data";
 import { formatRs, formatDate } from "@/lib/utils";
+import { cldThumb } from "@/lib/img";
 import { useCart } from "@/lib/cart";
 import { posUnits, baseUnit, unitPriceLabel } from "@/lib/units";
 import { useToast } from "@/lib/toast";
@@ -87,7 +88,7 @@ export default function ProductDetailPage() {
             <div className="aspect-square w-full overflow-hidden rounded-xl bg-gradient-to-br from-primary-50 to-navy-50">
               {medicine.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={medicine.image} alt={medicine.name} className="h-full w-full object-cover" />
+                <img src={cldThumb(medicine.image, { w: 600, h: 600 })} alt={medicine.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center">
                   <Pill className="h-28 w-28 text-primary-200" />

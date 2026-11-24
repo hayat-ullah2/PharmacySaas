@@ -18,8 +18,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { DonutChart } from "@/components/dashboard/Charts";
+import { SalesChart, DonutChart } from "@/components/dashboard/charts.lazy";
 import { AlertRow } from "@/components/dashboard/AlertCard";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";

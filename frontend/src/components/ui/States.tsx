@@ -33,8 +33,8 @@ export function EmptyState({
   );
 }
 
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("skeleton rounded-md", className)} />;
+export function Skeleton({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <div className={cn("skeleton rounded-md", className)} style={style} />;
 }
 
 export function TableSkeleton({ rows = 6, cols = 5 }: { rows?: number; cols?: number }) {

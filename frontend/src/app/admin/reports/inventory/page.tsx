@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Download, Boxes, Layers, Wallet, TrendingDown, CalendarClock, Pill } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { DonutChart } from "@/components/dashboard/Charts";
+import { DonutChart } from "@/components/dashboard/charts.lazy";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";

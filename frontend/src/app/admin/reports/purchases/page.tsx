@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Download, Truck, ClipboardList, PackageCheck, ShoppingCart } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { TrendBarChart } from "@/components/dashboard/Charts";
+import { TrendBarChart } from "@/components/dashboard/charts.lazy";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";

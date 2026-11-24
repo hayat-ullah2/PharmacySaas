@@ -8,6 +8,7 @@ import { posUnits, baseUnit, unitPriceLabel } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import { Badge } from "@/components/ui/Badge";
 import { formatRs, cn } from "@/lib/utils";
+import { cldThumb } from "@/lib/img";
 import type { Medicine, MedicineUnit } from "@/lib/types";
 
 export function MedicineCard({ medicine }: { medicine: Medicine }) {
@@ -50,8 +51,10 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
         {medicine.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={medicine.image}
+            src={cldThumb(medicine.image, { w: 400, h: 300 })}
             alt={medicine.name}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
           />
         ) : (

@@ -28,6 +28,7 @@ import { EmptyState } from "@/components/ui/States";
 import { PharmacyEditModal } from "@/components/control/PharmacyEditModal";
 import { PharmacyDeleteModal } from "@/components/control/PharmacyDeleteModal";
 import { formatDate, formatRs } from "@/lib/utils";
+import { cldThumb } from "@/lib/img";
 
 interface PharmacyDetail {
   id: string;
@@ -201,7 +202,7 @@ export default function PharmacyDetailPage() {
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/5">
                   {pharmacy.logo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={pharmacy.logo_url} alt={pharmacy.name} className="h-full w-full object-cover" />
+                    <img src={cldThumb(pharmacy.logo_url, { w: 96, h: 96 })} alt={pharmacy.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   ) : (
                     <Building2 className="h-6 w-6 text-navy-400" />
                   )}

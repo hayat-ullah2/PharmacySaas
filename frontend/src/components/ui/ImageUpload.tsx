@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { uploadImage } from "@/lib/cloudinary";
+import { cldThumb } from "@/lib/img";
 import { cn } from "@/lib/utils";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -55,7 +56,7 @@ export function ImageUpload({
           {value ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={value} alt="Preview" className="h-full w-full object-cover" />
+              <img src={cldThumb(value, { w: 160, h: 160 })} alt="Preview" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => onChange("")}
