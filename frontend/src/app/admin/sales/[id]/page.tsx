@@ -192,6 +192,12 @@ export default function SaleDetailPage() {
                 <dt className="text-navy-500">Paid ({capitalize(sale.payment)})</dt>
                 <dd className="font-medium text-navy-800">{formatRs(sale.amountPaid ?? sale.total)}</dd>
               </div>
+              {(sale.change ?? 0) > 0 && (
+                <div className="flex items-center justify-between">
+                  <dt className="text-navy-500">Change</dt>
+                  <dd className="font-medium text-navy-800">{formatRs(sale.change ?? 0)}</dd>
+                </div>
+              )}
               {(sale.outstanding ?? 0) > 0 && (
                 <div className="flex items-center justify-between">
                   <dt className="font-medium text-warning-700">Balance due</dt>

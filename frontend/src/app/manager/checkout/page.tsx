@@ -118,7 +118,7 @@ export default function CheckoutPage() {
         discount,
         tax,
         total: grandTotal,
-      }, amountPaid, saleType);
+      }, received, saleType);
     } catch (saleError) {
       toast({
         type: "danger",

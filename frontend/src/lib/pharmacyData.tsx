@@ -51,7 +51,7 @@ interface PharmacyDataContextValue {
     payment: string,
     prescriptionId: string | null,
     totals: { subtotal: number; discount: number; tax: number; total: number },
-    amountPaid: number,
+    amountReceived: number,
     saleType?: "retail" | "wholesale",
   ) => Promise<{ id: string; invoice: string }>;
   recordCashDeposit: (amount: number, note: string) => Promise<void>;
@@ -362,7 +362,7 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
       payment: string,
       prescriptionId: string | null,
       totals: { subtotal: number; discount: number; tax: number; total: number },
-      amountPaid: number,
+      amountReceived: number,
       saleType: "retail" | "wholesale" = "retail",
     ) => {
       if (!user || user.role !== "manager") {
@@ -380,7 +380,8 @@ export function PharmacyDataProvider({ children }: { children: React.ReactNode }
         p_tax: totals.tax,
         p_subtotal: totals.subtotal,
         p_total: totals.total,
-        p_amount_paid: amountPaid,
+        // Amount TENDERED — the server derives the clamped paid + the change.
+        p_amount_paid: amountReceived,
         p_prescription_id: prescriptionId,
         p_sale_type: saleType,
       });

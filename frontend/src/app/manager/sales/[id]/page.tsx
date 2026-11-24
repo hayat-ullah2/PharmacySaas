@@ -168,6 +168,12 @@ export default function ManagerSaleDetailPage() {
                 <span>Paid ({capitalize(sale.payment)})</span>
                 <span className="font-medium text-navy-800">{formatRs(sale.amountPaid ?? sale.total)}</span>
               </div>
+              {(sale.change ?? 0) > 0 && (
+                <div className="flex justify-between text-navy-500">
+                  <span>Change</span>
+                  <span className="font-medium text-navy-800">{formatRs(sale.change ?? 0)}</span>
+                </div>
+              )}
               {(sale.outstanding ?? 0) > 0 && (
                 <div className="flex justify-between">
                   <span className="font-medium text-warning-700">Balance due</span>

@@ -184,6 +184,10 @@ export interface Sale {
   tax: number;
   total: number;
   amountPaid?: number;
+  /** Cash tendered by the customer (may exceed total). Absent on older sales. */
+  amountReceived?: number;
+  /** Change handed back (amountReceived − total) for cash sales. */
+  change?: number;
   outstanding?: number;
   returnedAmount?: number;
   payment: PaymentMethod;
