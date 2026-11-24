@@ -48,6 +48,8 @@ export default function CheckoutPage() {
   const [customer, setCustomer] = useState("");
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [amountReceived, setAmountReceived] = useState("");
+  const [discountMode, setDiscountMode] = useState<"rs" | "pct">("rs");
+  const [discountInput, setDiscountInput] = useState("");
   const [processing, setProcessing] = useState(false);
   const [prescriptionId, setPrescriptionId] = useState("");
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -59,14 +61,27 @@ export default function CheckoutPage() {
   const done = Boolean(lastSale);
   const invoiceNo = lastSale?.invoice ?? "";
 
+  // Optional cashier discount — a flat Rs amount or a % of the subtotal. Clamped
+  // to [0, subtotal]; the server (complete_sale) re-validates that the discount
+  // never exceeds the subtotal, so what's shown is exactly what's recorded. No
+  // tax rule is configured yet, so tax stays 0 (its receipt line stays hidden).
+  const subtotal = totals.subtotal;
+  const discountPct = discountMode === "pct" ? Math.min(100, Math.max(0, Number(discountInput) || 0)) : 0;
+  const rawDiscount = discountMode === "pct"
+    ? Math.round((subtotal * discountPct) / 100)
+    : Math.max(0, Math.round(Number(discountInput) || 0));
+  const discount = Math.min(rawDiscount, subtotal);
+  const tax = 0;
+  const grandTotal = subtotal - discount + tax;
+
   // Payment math. For cash, a blank "received" means paid-in-full (the cashier
   // took the money); an explicit amount below the total makes it a credit sale.
   const isCash = payment === "cash";
   const hasReceived = isCash && amountReceived.trim() !== "";
-  const received = hasReceived ? Number(amountReceived) || 0 : totals.total;
-  const amountPaid = isCash ? Math.min(Math.max(received, 0), totals.total) : totals.total;
-  const change = hasReceived ? Math.max(0, received - totals.total) : 0;
-  const outstanding = Math.max(0, totals.total - amountPaid);
+  const received = hasReceived ? Number(amountReceived) || 0 : grandTotal;
+  const amountPaid = isCash ? Math.min(Math.max(received, 0), grandTotal) : grandTotal;
+  const change = hasReceived ? Math.max(0, received - grandTotal) : 0;
+  const outstanding = Math.max(0, grandTotal - amountPaid);
   const isCredit = outstanding > 0;
   const creditNeedsCustomer = isCredit && !customer;
   const paidLabel = outstanding <= 0 ? "Paid" : amountPaid <= 0 ? "Credit" : "Partial";
@@ -90,10 +105,10 @@ export default function CheckoutPage() {
     setProcessing(true);
     try {
       await completeSale(items, customer || null, payment, prescriptionId || null, {
-        subtotal: totals.subtotal,
-        discount: totals.discount,
-        tax: totals.tax,
-        total: totals.total,
+        subtotal,
+        discount,
+        tax,
+        total: grandTotal,
       }, amountPaid, saleType);
     } catch (saleError) {
       toast({
@@ -123,10 +138,10 @@ export default function CheckoutPage() {
       saleType,
       payment,
       items,
-      subtotal: totals.subtotal,
-      discount: totals.discount,
-      tax: totals.tax,
-      total: totals.total,
+      subtotal,
+      discount,
+      tax,
+      total: grandTotal,
       paid: amountPaid,
       change,
       outstanding,
@@ -223,11 +238,58 @@ export default function CheckoutPage() {
                     min={0}
                     value={amountReceived}
                     onChange={(e) => setAmountReceived(e.target.value)}
-                    placeholder={`${totals.total} (full)`}
+                    placeholder={`${grandTotal} (full)`}
                     hint="Leave blank for exact/full payment. Enter less than the total for a credit sale."
                   />
                   <Input label="Change" value={formatRs(change)} readOnly />
                 </div>
+              )}
+            </CardBody>
+          </Card>
+
+          {/* Discount */}
+          <Card>
+            <CardHeader title="Discount" subtitle="Optional — applied to this sale" />
+            <CardBody>
+              <div className="flex items-end gap-3">
+                <div className="inline-flex shrink-0 rounded-lg border border-navy-200 bg-navy-50 p-0.5">
+                  {(["rs", "pct"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setDiscountMode(mode)}
+                      className={cn(
+                        "rounded-md px-3 py-2 text-sm font-medium transition",
+                        discountMode === mode ? "bg-white text-navy-900 shadow-sm" : "text-navy-500 hover:text-navy-700",
+                      )}
+                    >
+                      {mode === "rs" ? "Rs" : "%"}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1">
+                  <Input
+                    label={discountMode === "pct" ? "Discount (%)" : "Discount (Rs)"}
+                    type="number"
+                    min={0}
+                    max={discountMode === "pct" ? 100 : subtotal}
+                    step={discountMode === "pct" ? 1 : "0.01"}
+                    value={discountInput}
+                    onChange={(e) => setDiscountInput(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              {discount > 0 ? (
+                <p className="mt-2 text-xs text-navy-500">
+                  −{formatRs(discount)} off {formatRs(subtotal)}
+                  {discountMode === "pct" ? ` (${discountPct}%)` : ""} → new total{" "}
+                  <span className="font-semibold text-navy-800">{formatRs(grandTotal)}</span>
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-navy-400">
+                  Leave at 0 for no discount. Discount can&apos;t exceed the subtotal.
+                </p>
               )}
             </CardBody>
           </Card>
@@ -249,13 +311,13 @@ export default function CheckoutPage() {
                 ))}
               </div>
               <div className="space-y-2 border-t border-navy-100 pt-3 text-sm">
-                <Row label="Subtotal" value={formatRs(totals.subtotal)} />
-                {totals.discount > 0 && <Row label="Discount" value={`- ${formatRs(totals.discount)}`} valueClass="text-success-600" />}
-                {totals.tax > 0 && <Row label="Tax" value={formatRs(totals.tax)} />}
+                <Row label="Subtotal" value={formatRs(subtotal)} />
+                {discount > 0 && <Row label={`Discount${discountMode === "pct" ? ` (${discountPct}%)` : ""}`} value={`- ${formatRs(discount)}`} valueClass="text-success-600" />}
+                {tax > 0 && <Row label="Tax" value={formatRs(tax)} />}
               </div>
               <div className="flex items-center justify-between border-t border-navy-100 pt-3">
                 <span className="text-base font-semibold text-navy-900">Total</span>
-                <span className="text-xl font-bold text-navy-900">{formatRs(totals.total)}</span>
+                <span className="text-xl font-bold text-navy-900">{formatRs(grandTotal)}</span>
               </div>
               {isCredit && (
                 <div className="space-y-2 rounded-lg bg-warning-50 p-3 text-sm">
@@ -331,7 +393,7 @@ export default function CheckoutPage() {
           <p className="mt-1 text-sm text-navy-500">
             Invoice <span className="font-semibold text-navy-700">{invoiceNo}</span> has been generated.
           </p>
-          <p className="mt-4 text-3xl font-bold text-navy-900">{formatRs(totals.total)}</p>
+          <p className="mt-4 text-3xl font-bold text-navy-900">{formatRs(grandTotal)}</p>
           <Badge tone={outstanding <= 0 ? "success" : "warning"} className="mt-2 capitalize">{payment} · {paidLabel}</Badge>
           {outstanding > 0 && (
             <p className="mt-2 text-sm font-medium text-warning-700">{formatRs(outstanding)} recorded on credit.</p>

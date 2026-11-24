@@ -10,7 +10,6 @@ import { EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { MEDICINES, STORE_CATEGORIES } from "@/lib/data";
 import { useCart } from "@/lib/cart";
-import { posUnits } from "@/lib/units";
 import { useToast } from "@/lib/toast";
 import type { SaleType } from "@/lib/types";
 
@@ -34,8 +33,11 @@ export default function ManagerStorePage() {
   const products = useMemo(() => {
     let list = MEDICINES.filter((m) => {
       if (m.archived) return false; // archived medicines are not sellable
-      // In wholesale mode, only show medicines allowed for wholesale AND with a wholesale-priced pack.
-      if (saleType === "wholesale" && (m.allowWholesale === false || posUnits(m, "wholesale").length === 0)) return false;
+      // In wholesale mode, hide only medicines the owner disabled for wholesale.
+      // Medicines that are wholesale-enabled but have no wholesale price still show —
+      // the card displays a clear "No wholesale price set" message instead of
+      // silently falling back to the retail price.
+      if (saleType === "wholesale" && m.allowWholesale === false) return false;
       const q = search.toLowerCase();
       const matchSearch = !q || m.name.toLowerCase().includes(q) || m.genericName.toLowerCase().includes(q);
       const matchCat = category === "All" || m.category === category;

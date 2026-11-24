@@ -128,8 +128,11 @@ export default function CartPage() {
                     aria-label={`Quantity in ${item.unit}`}
                     value={item.quantity}
                     onChange={(e) => {
-                      const n = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-                      updateQty(item.key, Number.isFinite(n) ? n : 1);
+                      // Parse as a SIGNED integer: a negative like "-9" must clamp to
+                      // the minimum (1), not lose its sign and clamp to max stock.
+                      // updateQty does the final [1 … available] clamping.
+                      const n = parseInt(e.target.value, 10);
+                      updateQty(item.key, Number.isNaN(n) ? 1 : n);
                     }}
                     className="w-10 border-0 bg-transparent text-center text-sm font-semibold text-navy-900 focus:outline-none"
                   />

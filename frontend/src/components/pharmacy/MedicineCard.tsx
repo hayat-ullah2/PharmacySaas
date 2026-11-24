@@ -102,7 +102,7 @@ export function MedicineCard({ medicine }: { medicine: Medicine }) {
 
         <div className="mt-2.5 flex items-end justify-between">
           <div>
-            <p className="text-base font-bold text-navy-900">{formatRs(sel.price)}</p>
+            <p className="text-base font-bold text-navy-900">{noWholesale ? "—" : formatRs(sel.price)}</p>
             <p className={cn("text-[11px]", outOfStock ? "text-danger-500" : lowStock ? "text-warning-600" : "text-navy-400")}>
               {noWholesale ? "No wholesale price set" : outOfStock ? "0 in stock" : `${maxOfSel} ${sel.name}${maxOfSel === 1 ? "" : "s"} in stock`}
             </p>
