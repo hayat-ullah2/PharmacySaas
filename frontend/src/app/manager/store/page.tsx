@@ -149,7 +149,7 @@ export default function ManagerStorePage() {
       ) : (
         <>
           <p className="mb-3 text-sm text-navy-500">
-            Showing <span className="font-medium text-navy-700">{products.length}</span> products
+            Showing <span className="font-medium text-navy-700">{products.length}</span> {products.length === 1 ? "product" : "products"}
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
             {products.map((m) => (

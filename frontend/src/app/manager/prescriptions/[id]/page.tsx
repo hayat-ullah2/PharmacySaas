@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/States";
 import { PRESCRIPTIONS, MEDICINES } from "@/lib/data";
 import { useCart } from "@/lib/cart";
 import { dispensePrescriptionToCart } from "@/lib/prescriptions";
-import { formatDate } from "@/lib/utils";
+import { formatDate, pluralize } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 
 export default function ManagerPrescriptionDetailPage() {
@@ -72,7 +72,7 @@ export default function ManagerPrescriptionDetailPage() {
               onClick={() => {
                 const { added, missing } = dispensePrescriptionToCart(rx, [...MEDICINES], addItem);
                 if (added > 0) {
-                  toast({ type: "success", title: "Added to cart", description: `${added} item(s) added${missing.length ? ` · ${missing.length} unavailable` : ""}.` });
+                  toast({ type: "success", title: "Added to cart", description: `${pluralize(added, "item")} added${missing.length ? ` · ${missing.length} unavailable` : ""}.` });
                   router.push("/manager/cart");
                 } else {
                   toast({ type: "warning", title: "Nothing available", description: "None of the prescribed medicines are in stock." });

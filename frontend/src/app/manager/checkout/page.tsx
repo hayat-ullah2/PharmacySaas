@@ -29,7 +29,7 @@ import { usePharmacyData } from "@/lib/pharmacyData";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
 import { printThermalReceipt, type ReceiptWidth } from "@/lib/receipt";
-import { formatRs, cn } from "@/lib/utils";
+import { formatRs, cn, pluralize } from "@/lib/utils";
 import type { PaymentMethod } from "@/lib/types";
 
 const METHODS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
         {/* Summary */}
         <div className="space-y-4">
           <Card>
-            <CardHeader title="Order Summary" subtitle={`${totals.count} item(s)`} />
+            <CardHeader title="Order Summary" subtitle={pluralize(totals.count, "item")} />
             <CardBody className="space-y-3">
               <div className="max-h-48 space-y-2 overflow-y-auto">
                 {items.map((i) => (
@@ -434,7 +434,14 @@ export default function CheckoutPage() {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => { clearLastSale(); clear(); router.push("/manager/sales"); }}
+                onClick={() => {
+                  // Open THIS invoice, not the whole list. Capture the id before
+                  // clearLastSale() nulls it.
+                  const id = lastSale?.id;
+                  clearLastSale();
+                  clear();
+                  router.push(id ? `/manager/sales/${id}` : "/manager/sales");
+                }}
               >
                 View Invoice
               </Button>

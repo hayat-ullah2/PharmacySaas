@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/States";
 import { useCart } from "@/lib/cart";
 import { MEDICINES } from "@/lib/data";
 import { posUnits, unitPriceLabel } from "@/lib/units";
-import { formatRs } from "@/lib/utils";
+import { formatRs, pluralize } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 
 export default function CartPage() {
@@ -41,7 +41,7 @@ export default function CartPage() {
     <div>
       <PageHeader
         title="Your Cart"
-        description={`${totals.count} item(s) ready for checkout`}
+        description={`${pluralize(totals.count, "item")} ready for checkout`}
         breadcrumbs={[{ label: "Store", href: "/manager/store" }, { label: "Cart" }]}
         actions={
           <div className="flex items-center gap-2">
@@ -56,7 +56,7 @@ export default function CartPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Items */}
         <Card className="lg:col-span-2">
-          <CardHeader title="Cart Items" subtitle={`${items.length} product line(s)`} />
+          <CardHeader title="Cart Items" subtitle={pluralize(items.length, "product line")} />
           <CardBody className="space-y-3">
             {items.map((item) => {
               const med = MEDICINES.find((m) => m.id === item.medicineId);

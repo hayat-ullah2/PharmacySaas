@@ -14,7 +14,7 @@ import { EmptyState } from "@/components/ui/States";
 import { SALES, CASH_LEDGER } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { usePharmacyData, useLazyEntity } from "@/lib/pharmacyData";
-import { formatRs, formatDate } from "@/lib/utils";
+import { formatRs, formatDate, pluralize } from "@/lib/utils";
 import { useToast } from "@/lib/toast";
 import type { CashLedgerEntry } from "@/lib/types";
 
@@ -88,7 +88,7 @@ export default function ManagerLedgerPage() {
       </div>
 
       <Card className="mt-5">
-        <CardHeader title="My hand-overs" subtitle={`${myDeposits.length} deposit(s)`} />
+        <CardHeader title="My hand-overs" subtitle={pluralize(myDeposits.length, "deposit")} />
         <DataTable
           columns={columns}
           rows={myDeposits}

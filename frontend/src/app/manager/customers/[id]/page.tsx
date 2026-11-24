@@ -12,7 +12,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { EmptyState } from "@/components/ui/States";
 import { CUSTOMERS, SALES } from "@/lib/data";
-import { formatRs, formatDate, initials } from "@/lib/utils";
+import { formatRs, formatDate, initials, pluralize } from "@/lib/utils";
 import type { Sale } from "@/lib/types";
 
 export default function ManagerCustomerDetailPage() {
@@ -114,7 +114,7 @@ export default function ManagerCustomerDetailPage() {
           </div>
 
           <Card>
-            <CardHeader title="Purchase History" subtitle={`${customerSales.length} transaction(s)`} />
+            <CardHeader title="Purchase History" subtitle={pluralize(customerSales.length, "transaction")} />
             <DataTable
               columns={columns}
               rows={customerSales}

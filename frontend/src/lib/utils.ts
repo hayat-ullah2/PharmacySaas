@@ -43,6 +43,15 @@ export function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
 }
 
+/**
+ * "{n} {noun}" with correct pluralization — e.g. pluralize(1, "product") →
+ * "1 product", pluralize(3, "product") → "3 products". Pass an explicit plural
+ * for irregular words: pluralize(2, "entry", "entries").
+ */
+export function pluralize(n: number, singular: string, pluralForm?: string): string {
+  return `${formatNumber(n)} ${n === 1 ? singular : pluralForm ?? `${singular}s`}`;
+}
+
 /** Format an ISO date string as e.g. "26 Sep 2026". */
 export function formatDate(iso: string): string {
   const d = new Date(iso);
