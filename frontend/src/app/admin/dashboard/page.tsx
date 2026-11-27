@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Wallet,
+  Percent,
   Truck,
   Boxes,
   PackageX,
@@ -98,6 +99,25 @@ export default function AdminDashboard() {
     .filter((p) => p.date === yesterday)
     .reduce((sum, p) => sum + p.total, 0);
 
+  // Today's gross margin = revenue − cost of goods sold. Cost per line = the sold
+  // base quantity × the medicine's purchase price (current price used as the cost
+  // basis, since per-sale cost isn't stored). Display only — no data is changed.
+  const medicineById = new Map([...MEDICINES].map((m) => [m.id, m]));
+  const salesToday = sales.filter((s) => s.date === today);
+  const revenueToday = salesToday.reduce((sum, s) => sum + s.total, 0);
+  const costToday = salesToday.reduce(
+    (sum, s) =>
+      sum +
+      s.items.reduce((lineCost, it) => {
+        const med = it.medicineId ? medicineById.get(it.medicineId) : undefined;
+        const baseQty = it.baseQuantity ?? it.quantity * (it.factor ?? 1);
+        return lineCost + (med ? med.purchasePrice * baseQty : 0);
+      }, 0),
+    0,
+  );
+  const marginToday = revenueToday - costToday;
+  const marginPct = revenueToday > 0 ? (marginToday / revenueToday) * 100 : 0;
+
   const recentSales = sales
     .slice()
     .sort((a, b) => (a.date === b.date ? b.invoice.localeCompare(a.invoice) : b.date.localeCompare(a.date)))
@@ -155,7 +175,7 @@ export default function AdminDashboard() {
       />
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-7">
         <StatCard
           label="Today's Sales"
           value={formatRs(KPI.todaySales)}
@@ -163,6 +183,13 @@ export default function AdminDashboard() {
           tone="primary"
           delta={trend(KPI.todaySales, salesYesterday)}
           hint={trend(KPI.todaySales, salesYesterday) ? undefined : "vs. yesterday"}
+        />
+        <StatCard
+          label="Today's Margin"
+          value={formatRs(marginToday, { compact: true })}
+          icon={<Percent className="h-5 w-5" />}
+          tone="success"
+          hint={revenueToday > 0 ? `${marginPct.toFixed(1)}% margin` : "No sales yet"}
         />
         <StatCard
           label="Purchases"
